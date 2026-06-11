@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>木材価格OCR＋積算計算機（MVP）</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>木材価格OCR（MVP）</h1>
+      <p class="lead">値札を撮影してOCR→確認→スプレッドシート記録まで行います。</p>
+
+      <section class="card">
+        <h2>1. 位置情報</h2>
+        <div id="geoStatus">位置情報を取得中...</div>
+        <div id="locationAuto" class="hidden">
+          <p><strong>都道府県:</strong> <span id="prefectureText"></span></p>
+          <p><strong>市区町村:</strong> <span id="cityText"></span></p>
+        </div>
+        <div id="locationManual" class="hidden grid2">
+          <label>
+            都道府県
+            <select id="manualPrefecture"></select>
+          </label>
+          <label>
+            市区町村
+            <input id="manualCity" placeholder="例: 新宿区" />
+          </label>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>2. 値札画像を読み取り</h2>
+        <div class="grid2">
+          <label>
+            値札画像
+            <input id="photoInput" type="file" accept="image/*" capture="environment" />
+          </label>
+          <label>
+            店舗名（任意）
+            <input id="storeName" placeholder="例: ○○ホームセンター" />
+          </label>
+        </div>
+        <button id="scanButton" type="button" class="primary">Geminiで読み取り</button>
+        <div id="scanStatus" class="status"></div>
+      </section>
+
+      <section class="card hidden" id="confirmSection">
+        <h2>3. 抽出結果の確認・修正</h2>
+        <div class="grid2">
+          <label>樹種<input id="species" /></label>
+          <label>価格(円)<input id="priceYen" type="number" min="0" /></label>
+          <label>幅(mm)<input id="widthMm" type="number" min="0" /></label>
+          <label>高さ(mm)<input id="heightMm" type="number" min="0" /></label>
+          <label>長さ(mm)<input id="lengthMm" type="number" min="0" /></label>
+          <label>本数・枚数<input id="quantity" type="number" min="1" value="1" /></label>
+          <label class="full">備考<input id="note" /></label>
+        </div>
+        <div class="resultBox">
+          <p>体積: <span id="volumeText">-</span> m³</p>
+          <p>立米単価: <span id="unitPriceText">-</span> 円/m³</p>
+        </div>
+        <button id="submitButton" type="button" class="primary">Google Sheetsへ記録</button>
+        <div id="submitStatus" class="status"></div>
+      </section>
+
+      <section class="card hidden" id="doneSection">
+        <h2>完了</h2>
+        <p>スプレッドシートへ記録しました。</p>
+      </section>
+    </main>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
