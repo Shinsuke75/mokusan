@@ -6,7 +6,6 @@ const PREFECTURES = [
   "佐賀県","長崎県","熊本県","大分県","宮崎県","鹿児島県","沖縄県"
 ];
 
-// 1m³ = 1,000mm × 1,000mm × 1,000mm = 1,000,000,000mm³
 const MM3_TO_M3_DIVISOR = 1_000_000_000;
 const GEOLOCATION_TIMEOUT_MS = 8000;
 const GEOLOCATION_MAX_AGE_MS = 60000;
@@ -14,7 +13,8 @@ const GEOLOCATION_MAX_AGE_MS = 60000;
 const state = {
   imageBase64: "",
   mimeType: "image/jpeg",
-  location: { prefecture: "", city: "", source: "manual" }
+  location: { prefecture: "", city: "", source: "manual" },
+  selectedFile: null
 };
 
 const getElement = (id) => document.getElementById(id);
@@ -27,7 +27,11 @@ const els = {
   cityText: getElement("cityText"),
   manualPrefecture: getElement("manualPrefecture"),
   manualCity: getElement("manualCity"),
-  photoInput: getElement("photoInput"),
+  cameraButton: getElement("cameraButton"),
+  galleryButton: getElement("galleryButton"),
+  cameraInput: getElement("cameraInput"),
+  galleryInput: getElement("galleryInput"),
+  photoName: getElement("photoName"),
   storeName: getElement("storeName"),
   scanButton: getElement("scanButton"),
   scanStatus: getElement("scanStatus"),
@@ -71,18 +75,9 @@ async function detectLocation() {
       enableManualLocation(`位置情報の住所変換に失敗: ${e.message}`);
     }
   }, (error) => {
-    if (error?.code === 1) {
-      enableManualLocation("位置情報が拒否されたため手動入力に切り替えました。");
-      return;
-    }
-    if (error?.code === 2) {
-      enableManualLocation("現在地を特定できなかったため手動入力に切り替えました。");
-      return;
-    }
-    if (error?.code === 3) {
-      enableManualLocation("位置情報の取得がタイムアウトしたため手動入力に切り替えました。");
-      return;
-    }
+    if (error?.code === 1) { enableManualLocation("位置情報が拒否されたため手動入力に切り替えました。"); return; }
+    if (error?.code === 2) { enableManualLocation("現在地を特定できなかったため手動入力に切り替えました。"); return; }
+    if (error?.code === 3) { enableManualLocation("位置情報の取得がタイムアウトしたため手動入力に切り替えました。"); return; }
     enableManualLocation("位置情報の取得に失敗したため手動入力に切り替えました。");
   }, {
     enableHighAccuracy: false,
@@ -139,8 +134,14 @@ function calcVolumeAndUnitPrice() {
   return { volumeM3, unitPrice };
 }
 
+function onFileSelected(file) {
+  state.selectedFile = file;
+  els.photoName.textContent = file.name;
+  els.photoName.classList.remove("hidden");
+}
+
 async function runScan() {
-  const file = els.photoInput.files?.[0];
+  const file = state.selectedFile;
   if (!file) {
     els.scanStatus.textContent = "値札画像を選択してください。";
     return;
@@ -184,11 +185,7 @@ async function runScan() {
 
 function currentLocation() {
   if (!els.locationManual.classList.contains("hidden")) {
-    return {
-      prefecture: els.manualPrefecture.value,
-      city: els.manualCity.value,
-      source: "manual"
-    };
+    return { prefecture: els.manualPrefecture.value, city: els.manualCity.value, source: "manual" };
   }
   return state.location;
 }
@@ -243,13 +240,13 @@ async function submitRecord() {
   }
 }
 
-[
-  els.widthMm,
-  els.heightMm,
-  els.lengthMm,
-  els.quantity,
-  els.priceYen
-].forEach((input) => input.addEventListener("input", calcVolumeAndUnitPrice));
+[els.widthMm, els.heightMm, els.lengthMm, els.quantity, els.priceYen]
+  .forEach((input) => input.addEventListener("input", calcVolumeAndUnitPrice));
+
+els.cameraButton.addEventListener("click", () => els.cameraInput.click());
+els.galleryButton.addEventListener("click", () => els.galleryInput.click());
+els.cameraInput.addEventListener("change", () => { const f = els.cameraInput.files?.[0]; if (f) onFileSelected(f); });
+els.galleryInput.addEventListener("change", () => { const f = els.galleryInput.files?.[0]; if (f) onFileSelected(f); });
 
 els.scanButton.addEventListener("click", runScan);
 els.submitButton.addEventListener("click", submitRecord);

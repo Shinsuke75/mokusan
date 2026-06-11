@@ -33,10 +33,16 @@
       <section class="card">
         <h2>2. 値札画像を読み取り</h2>
         <div class="grid2">
-          <label>
-            値札画像
-            <input id="photoInput" type="file" accept="image/*" capture="environment" />
-          </label>
+          <div>
+            <span class="field-label">値札画像</span>
+            <div class="photo-select">
+              <button type="button" id="cameraButton" class="photo-btn">📷 カメラで撮影</button>
+              <button type="button" id="galleryButton" class="photo-btn">🖼 写真を選ぶ</button>
+            </div>
+            <div id="photoName" class="photo-name hidden"></div>
+            <input id="cameraInput" type="file" accept="image/*" capture="environment" class="hidden" />
+            <input id="galleryInput" type="file" accept="image/*" class="hidden" />
+          </div>
           <label>
             店舗名（任意）
             <input id="storeName" placeholder="例: ○○ホームセンター" />
