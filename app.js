@@ -97,11 +97,23 @@ function enableManualLocation(message) {
   els.locationAuto.classList.add("hidden");
 }
 
-function fileToDataUrl(file) {
+function compressImage(file, maxPx = 1200, quality = 0.75) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
     reader.onerror = () => reject(new Error("画像の読み込みに失敗しました"));
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("画像のデコードに失敗しました"));
+      img.onload = () => {
+        const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.src = e.target.result;
+    };
     reader.readAsDataURL(file);
   });
 }
@@ -138,7 +150,7 @@ async function runScan() {
   els.scanStatus.textContent = "Geminiで解析中...";
 
   try {
-    const dataUrl = await fileToDataUrl(file);
+    const dataUrl = await compressImage(file);
     const [meta, base64] = dataUrl.split(",");
     state.imageBase64 = base64;
     state.mimeType = meta.match(/data:(.*?);base64/)?.[1] || "image/jpeg";
