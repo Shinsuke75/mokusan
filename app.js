@@ -14,7 +14,9 @@ const state = {
   imageBase64: "",
   mimeType: "image/jpeg",
   location: { prefecture: "", city: "", source: "manual" },
-  selectedFile: null
+  selectedFile: null,
+  priceData: { recent: [], averages: [] },
+  priceDataLoaded: false
 };
 
 const getElement = (id) => document.getElementById(id);
@@ -31,6 +33,7 @@ const els = {
   galleryButton: getElement("galleryButton"),
   cameraInput: getElement("cameraInput"),
   galleryInput: getElement("galleryInput"),
+  photoPreview: getElement("photoPreview"),
   photoName: getElement("photoName"),
   storeName: getElement("storeName"),
   scanButton: getElement("scanButton"),
@@ -47,7 +50,27 @@ const els = {
   unitPriceText: getElement("unitPriceText"),
   submitButton: getElement("submitButton"),
   submitStatus: getElement("submitStatus"),
-  doneSection: getElement("doneSection")
+  doneSection: getElement("doneSection"),
+  tabScan: getElement("tabScan"),
+  tabCalc: getElement("tabCalc"),
+  scanContent: getElement("scanContent"),
+  calcContent: getElement("calcContent"),
+  calcSpecies: getElement("calcSpecies"),
+  speciesList: getElement("speciesList"),
+  calcPrefecture: getElement("calcPrefecture"),
+  avgResult: getElement("avgResult"),
+  avgUnitPrice: getElement("avgUnitPrice"),
+  avgCount: getElement("avgCount"),
+  noDataMsg: getElement("noDataMsg"),
+  calcUnitPrice: getElement("calcUnitPrice"),
+  calcWidth: getElement("calcWidth"),
+  calcHeight: getElement("calcHeight"),
+  calcLength: getElement("calcLength"),
+  calcQty: getElement("calcQty"),
+  calcVolume: getElement("calcVolume"),
+  calcPrice: getElement("calcPrice"),
+  recentStatus: getElement("recentStatus"),
+  recentTable: getElement("recentTable")
 };
 
 function fillPrefectures() {
@@ -79,11 +102,7 @@ async function detectLocation() {
     if (error?.code === 2) { enableManualLocation("現在地を特定できなかったため手動入力に切り替えました。"); return; }
     if (error?.code === 3) { enableManualLocation("位置情報の取得がタイムアウトしたため手動入力に切り替えました。"); return; }
     enableManualLocation("位置情報の取得に失敗したため手動入力に切り替えました。");
-  }, {
-    enableHighAccuracy: false,
-    timeout: GEOLOCATION_TIMEOUT_MS,
-    maximumAge: GEOLOCATION_MAX_AGE_MS
-  });
+  }, { enableHighAccuracy: false, timeout: GEOLOCATION_TIMEOUT_MS, maximumAge: GEOLOCATION_MAX_AGE_MS });
 }
 
 function enableManualLocation(message) {
@@ -124,13 +143,10 @@ function calcVolumeAndUnitPrice() {
   const length = toNumber(els.lengthMm.value);
   const qty = Math.max(1, toNumber(els.quantity.value, 1));
   const price = toNumber(els.priceYen.value);
-
   const volumeM3 = (width * height * length * qty) / MM3_TO_M3_DIVISOR;
   const unitPrice = volumeM3 > 0 ? price / volumeM3 : 0;
-
   els.volumeText.textContent = volumeM3 > 0 ? volumeM3.toFixed(6) : "-";
   els.unitPriceText.textContent = volumeM3 > 0 ? Math.round(unitPrice).toLocaleString("ja-JP") : "-";
-
   return { volumeM3, unitPrice };
 }
 
@@ -138,33 +154,28 @@ function onFileSelected(file) {
   state.selectedFile = file;
   els.photoName.textContent = file.name;
   els.photoName.classList.remove("hidden");
+  const url = URL.createObjectURL(file);
+  els.photoPreview.src = url;
+  els.photoPreview.classList.remove("hidden");
 }
 
 async function runScan() {
   const file = state.selectedFile;
-  if (!file) {
-    els.scanStatus.textContent = "値札画像を選択してください。";
-    return;
-  }
-
+  if (!file) { els.scanStatus.textContent = "値札画像を選択してください。"; return; }
   els.scanButton.disabled = true;
   els.scanStatus.textContent = "Geminiで解析中...";
-
   try {
     const dataUrl = await compressImage(file);
     const [meta, base64] = dataUrl.split(",");
     state.imageBase64 = base64;
     state.mimeType = meta.match(/data:(.*?);base64/)?.[1] || "image/jpeg";
-
     const res = await fetch("/api/scan-tag", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ imageBase64: state.imageBase64, mimeType: state.mimeType })
     });
-
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "OCRに失敗しました");
-
     els.species.value = data.species || "";
     els.widthMm.value = data.widthMm || "";
     els.heightMm.value = data.heightMm || "";
@@ -172,7 +183,6 @@ async function runScan() {
     els.priceYen.value = data.priceYen || "";
     els.quantity.value = data.quantity || 1;
     els.note.value = data.note || "";
-
     calcVolumeAndUnitPrice();
     els.confirmSection.classList.remove("hidden");
     els.scanStatus.textContent = "抽出結果を確認して送信してください。";
@@ -193,19 +203,10 @@ function currentLocation() {
 async function submitRecord() {
   const loc = currentLocation();
   const { volumeM3, unitPrice } = calcVolumeAndUnitPrice();
-
-  if (loc.source !== "geo" && !loc.prefecture) {
-    els.submitStatus.textContent = "都道府県を入力してください。";
-    return;
-  }
-  if (volumeM3 <= 0) {
-    els.submitStatus.textContent = "寸法・本数・価格を確認してください。";
-    return;
-  }
-
+  if (loc.source !== "geo" && !loc.prefecture) { els.submitStatus.textContent = "都道府県を入力してください。"; return; }
+  if (volumeM3 <= 0) { els.submitStatus.textContent = "寸法・本数・価格を確認してください。"; return; }
   els.submitButton.disabled = true;
   els.submitStatus.textContent = "送信中...";
-
   try {
     const payload = {
       date: new Date().toISOString(),
@@ -221,16 +222,13 @@ async function submitRecord() {
       unitPriceYenPerM3: Math.round(unitPrice),
       note: els.note.value || ""
     };
-
     const res = await fetch("/api/append-sheet", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
-
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "送信に失敗しました");
-
     els.submitStatus.textContent = "記録しました。";
     els.doneSection.classList.remove("hidden");
   } catch (e) {
@@ -240,6 +238,101 @@ async function submitRecord() {
   }
 }
 
+function switchTab(tab) {
+  if (tab === "scan") {
+    els.tabScan.classList.add("active");
+    els.tabCalc.classList.remove("active");
+    els.scanContent.classList.remove("hidden");
+    els.calcContent.classList.add("hidden");
+  } else {
+    els.tabCalc.classList.add("active");
+    els.tabScan.classList.remove("active");
+    els.calcContent.classList.remove("hidden");
+    els.scanContent.classList.add("hidden");
+    loadPriceData();
+  }
+}
+
+async function loadPriceData() {
+  if (state.priceDataLoaded) return;
+  try {
+    const res = await fetch("/api/get-prices");
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "データ取得に失敗しました");
+    state.priceData = data;
+    state.priceDataLoaded = true;
+    populateCalcDropdowns();
+    renderRecentTable();
+  } catch (e) {
+    els.recentStatus.textContent = `エラー: ${e.message}`;
+  }
+}
+
+function populateCalcDropdowns() {
+  const { averages } = state.priceData;
+  const speciesSet = [...new Set(averages.map((a) => a.species).filter(Boolean))];
+  els.speciesList.innerHTML = speciesSet.map((s) => `<option value="${s}">`).join("");
+  const prefSet = [...new Set(averages.map((a) => a.prefecture).filter(Boolean))].sort();
+  els.calcPrefecture.innerHTML = '<option value="">すべて</option>' +
+    prefSet.map((p) => `<option value="${p}">${p}</option>`).join("");
+  if (averages.length === 0) els.noDataMsg.classList.remove("hidden");
+}
+
+function updateAvgDisplay() {
+  const species = els.calcSpecies.value.trim();
+  const prefecture = els.calcPrefecture.value;
+  const { averages } = state.priceData;
+  if (!species || averages.length === 0) { els.avgResult.classList.add("hidden"); return; }
+  const matches = averages.filter((a) =>
+    a.species === species && (prefecture === "" || a.prefecture === prefecture)
+  );
+  if (matches.length === 0) { els.avgResult.classList.add("hidden"); return; }
+  const totalCount = matches.reduce((sum, m) => sum + m.count, 0);
+  const weightedAvg = Math.round(
+    matches.reduce((sum, m) => sum + m.avgUnitPrice * m.count, 0) / totalCount
+  );
+  els.avgUnitPrice.textContent = weightedAvg.toLocaleString("ja-JP");
+  els.avgCount.textContent = totalCount;
+  els.avgResult.classList.remove("hidden");
+  els.calcUnitPrice.value = weightedAvg;
+  updateCalcResult();
+}
+
+function updateCalcResult() {
+  const unitPrice = toNumber(els.calcUnitPrice.value);
+  const width = toNumber(els.calcWidth.value);
+  const height = toNumber(els.calcHeight.value);
+  const length = toNumber(els.calcLength.value);
+  const qty = Math.max(1, toNumber(els.calcQty.value, 1));
+  const volumeM3 = (width * height * length * qty) / MM3_TO_M3_DIVISOR;
+  const totalPrice = volumeM3 > 0 && unitPrice > 0 ? Math.round(volumeM3 * unitPrice) : 0;
+  els.calcVolume.textContent = volumeM3 > 0 ? volumeM3.toFixed(6) : "-";
+  els.calcPrice.textContent = totalPrice > 0 ? totalPrice.toLocaleString("ja-JP") : "-";
+}
+
+function renderRecentTable() {
+  const { recent } = state.priceData;
+  els.recentStatus.classList.add("hidden");
+  if (recent.length === 0) {
+    els.recentTable.innerHTML = '<p class="status">まだ記録がありません。</p>';
+    return;
+  }
+  const rows = recent.map((r) => `
+    <tr>
+      <td>${r.date}</td>
+      <td>${r.prefecture}${r.city ? " " + r.city : ""}</td>
+      <td>${r.species || "-"}</td>
+      <td>${r.unitPrice.toLocaleString("ja-JP")}</td>
+    </tr>
+  `).join("");
+  els.recentTable.innerHTML = `
+    <table class="recent-table">
+      <thead><tr><th>日付</th><th>場所</th><th>樹種</th><th>立米単価(円)</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
 [els.widthMm, els.heightMm, els.lengthMm, els.quantity, els.priceYen]
   .forEach((input) => input.addEventListener("input", calcVolumeAndUnitPrice));
 
@@ -247,9 +340,14 @@ els.cameraButton.addEventListener("click", () => els.cameraInput.click());
 els.galleryButton.addEventListener("click", () => els.galleryInput.click());
 els.cameraInput.addEventListener("change", () => { const f = els.cameraInput.files?.[0]; if (f) onFileSelected(f); });
 els.galleryInput.addEventListener("change", () => { const f = els.galleryInput.files?.[0]; if (f) onFileSelected(f); });
-
 els.scanButton.addEventListener("click", runScan);
 els.submitButton.addEventListener("click", submitRecord);
+els.tabScan.addEventListener("click", () => switchTab("scan"));
+els.tabCalc.addEventListener("click", () => switchTab("calc"));
+els.calcSpecies.addEventListener("input", updateAvgDisplay);
+els.calcPrefecture.addEventListener("change", updateAvgDisplay);
+[els.calcUnitPrice, els.calcWidth, els.calcHeight, els.calcLength, els.calcQty]
+  .forEach((input) => input.addEventListener("input", updateCalcResult));
 
 fillPrefectures();
 detectLocation();

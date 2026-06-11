@@ -11,6 +11,12 @@
       <h1>木材価格OCR（MVP）</h1>
       <p class="lead">値札を撮影してOCR→確認→スプレッドシート記録まで行います。</p>
 
+      <div class="tab-nav">
+        <button class="tab-btn active" id="tabScan">📷 スキャン</button>
+        <button class="tab-btn" id="tabCalc">📊 データ・計算</button>
+      </div>
+
+      <div id="scanContent">
       <section class="card">
         <h2>1. 位置情報</h2>
         <div id="geoStatus">位置情報を取得中...</div>
@@ -39,6 +45,7 @@
               <button type="button" id="cameraButton" class="photo-btn">📷 カメラで撮影</button>
               <button type="button" id="galleryButton" class="photo-btn">🖼 写真を選ぶ</button>
             </div>
+            <img id="photoPreview" class="photo-preview hidden" alt="選択した画像" />
             <div id="photoName" class="photo-name hidden"></div>
             <input id="cameraInput" type="file" accept="image/*" capture="environment" class="hidden" />
             <input id="galleryInput" type="file" accept="image/*" class="hidden" />
@@ -75,6 +82,51 @@
         <h2>完了</h2>
         <p>スプレッドシートへ記録しました。</p>
       </section>
+      </div>
+
+      <div id="calcContent" class="hidden">
+        <section class="card">
+          <h2>樹種・地域で検索</h2>
+          <div class="grid2">
+            <label>
+              樹種
+              <input id="calcSpecies" list="speciesList" placeholder="例: スギ" />
+              <datalist id="speciesList"></datalist>
+            </label>
+            <label>
+              都道府県
+              <select id="calcPrefecture">
+                <option value="">すべて</option>
+              </select>
+            </label>
+          </div>
+          <div id="avgResult" class="resultBox hidden">
+            <p>平均立米単価: <strong><span id="avgUnitPrice">-</span> 円/m³</strong>（<span id="avgCount">-</span>件のデータ）</p>
+          </div>
+          <p id="noDataMsg" class="status hidden">まだデータがありません。スキャンタブから記録してみてください。</p>
+        </section>
+
+        <section class="card">
+          <h2>積算計算</h2>
+          <div class="grid2">
+            <label>立米単価(円/m³)<input id="calcUnitPrice" type="number" min="0" placeholder="自動入力または手動" /></label>
+            <label>幅(mm)<input id="calcWidth" type="number" min="0" /></label>
+            <label>高さ(mm)<input id="calcHeight" type="number" min="0" /></label>
+            <label>長さ(mm)<input id="calcLength" type="number" min="0" /></label>
+            <label>本数・枚数<input id="calcQty" type="number" min="1" value="1" /></label>
+          </div>
+          <div class="resultBox">
+            <p>体積: <span id="calcVolume">-</span> m³</p>
+            <p>金額: <strong><span id="calcPrice">-</span> 円</strong></p>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>みんなの記録</h2>
+          <div id="recentStatus" class="status">読み込み中...</div>
+          <div id="recentTable"></div>
+        </section>
+      </div>
     </main>
 
     <script type="module" src="/app.js"></script>
