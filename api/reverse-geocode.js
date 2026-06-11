@@ -2,8 +2,17 @@ function pickCity(address = {}) {
   return address.city || address.town || address.village || address.county || "";
 }
 
+function pickPrefecture(address = {}, displayName = "") {
+  if (address.state) return address.state;
+  if (address.province) return address.province;
+  if (displayName) {
+    const match = displayName.match(/([^\s,、]+[都道府県])/);
+    if (match) return match[1];
+  }
+  return "";
+}
+
 const NOMINATIM_REVERSE_URL = "https://nominatim.openstreetmap.org/reverse";
-// Nominatimのzoom=10は市区町村レベルの粒度（詳細住所ではなく自治体単位）を狙う設定
 const NOMINATIM_ZOOM_LEVEL = 14;
 
 export default async function handler(req, res) {
@@ -45,7 +54,7 @@ export default async function handler(req, res) {
 
     const address = data.address || {};
     return res.status(200).json({
-      prefecture: address.state || "",
+      prefecture: pickPrefecture(address, data.display_name || ""),
       city: pickCity(address)
     });
   } catch (error) {
