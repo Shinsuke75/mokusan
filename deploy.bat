@@ -4,5 +4,5 @@ git add .
 git commit -m "update"
 git push
 echo.
-echo === デプロイ完了！Vercelが自動更新します ===
+echo === Deploy complete! Vercel will update automatically ===
 pause
