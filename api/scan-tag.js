@@ -19,7 +19,7 @@ const OCR_PROMPT = [
 ].join("\n");
 
 const GEMINI_GENERATE_CONTENT_URL =
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent";
+  "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent";
 
 function normalizeResult(raw = {}) {
   return {
@@ -80,8 +80,7 @@ export default async function handler(req, res) {
             }
           ],
           generationConfig: {
-            temperature: 0.1,
-            responseMimeType: "application/json"
+            temperature: 0.1
           }
         })
       }
@@ -99,9 +98,10 @@ export default async function handler(req, res) {
       return res.status(422).json({ error: "Gemini response is empty" });
     }
 
+    const jsonText = rawText.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
     let parsed;
     try {
-      parsed = JSON.parse(rawText);
+      parsed = JSON.parse(jsonText);
     } catch {
       return res.status(422).json({
         error: "Gemini response is not valid JSON. 画像の傾き補正や再撮影を行い、値札全体が写るようにしてください。"
