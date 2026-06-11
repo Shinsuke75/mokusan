@@ -197,7 +197,7 @@ async function submitRecord() {
   const loc = currentLocation();
   const { volumeM3, unitPrice } = calcVolumeAndUnitPrice();
 
-  if (!loc.prefecture) {
+  if (loc.source !== "geo" && !loc.prefecture) {
     els.submitStatus.textContent = "都道府県を入力してください。";
     return;
   }
