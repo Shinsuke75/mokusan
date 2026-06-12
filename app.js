@@ -331,7 +331,7 @@ function renderListChips() {
   });
 }
 
-// 樹種入力時にリストの最新単価を自動補完
+// 樹種入力時にリストの最新単価・寸法を自動補完
 function onSpeciesChange() {
   const species = els.calcSpecies.value.trim();
   if (!species) {
@@ -341,7 +341,15 @@ function onSpeciesChange() {
   const match = [...state.list].reverse().find((item) => item.species === species);
   if (match) {
     els.calcUnitPrice.value = match.unitPrice;
-    els.unitPriceSource.textContent = `リストから参照 (${match.unitPrice.toLocaleString("ja-JP")} 円/m³)`;
+    if (match.volumeM3 > 0) {
+      els.calcWidth.value = match.widthMm;
+      els.calcHeight.value = match.heightMm;
+      els.calcLength.value = match.lengthMm;
+      els.calcQty.value = match.qty;
+      els.unitPriceSource.textContent = `リストから参照 (${match.unitPrice.toLocaleString("ja-JP")} 円/m³・寸法も入力済み)`;
+    } else {
+      els.unitPriceSource.textContent = `リストから参照 (${match.unitPrice.toLocaleString("ja-JP")} 円/m³)`;
+    }
     els.unitPriceSource.className = "hint-text avg-price";
     updateCalcResult();
   } else {
