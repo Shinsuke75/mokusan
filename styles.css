@@ -116,6 +116,12 @@ input, select {
 .meta-section { margin-top: 16px; border-top: 1px solid #e5e7eb; padding-top: 12px; }
 .meta-label { font-size: 13px; font-weight: 600; color: #6b7280; margin: 0 0 8px; }
 
+/* 価格入力行（税込トグル付き） */
+.price-row { display: flex; gap: 8px; align-items: center; }
+.price-row input[type="number"] { flex: 1; min-width: 0; }
+.tax-chk { display: flex; align-items: center; gap: 4px; font-weight: 400; font-size: 13px; white-space: nowrap; cursor: pointer; }
+.tax-chk input[type="checkbox"] { width: 18px; height: 18px; min-height: auto; cursor: pointer; }
+
 /* 同意チェックボックス */
 .consent-label {
   display: flex; align-items: flex-start; gap: 10px;
