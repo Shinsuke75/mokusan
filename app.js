@@ -21,6 +21,18 @@ const state = {
   myPrices: JSON.parse(localStorage.getItem("mokusan_my_prices") || "{}")
 };
 
+// 既存リストの樹種・単価をmyPricesに取り込む（移行処理）
+(() => {
+  let updated = false;
+  state.list.forEach((item) => {
+    if (item.species && item.species !== "（未設定）" && item.unitPrice > 0 && state.myPrices[item.species] == null) {
+      state.myPrices[item.species] = item.unitPrice;
+      updated = true;
+    }
+  });
+  if (updated) localStorage.setItem("mokusan_my_prices", JSON.stringify(state.myPrices));
+})();
+
 const getElement = (id) => document.getElementById(id);
 
 const els = {
