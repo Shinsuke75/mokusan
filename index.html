@@ -89,30 +89,13 @@
       <!-- ===== 計算タブ ===== -->
       <div id="calcContent" class="hidden">
         <section class="card">
-          <h2>みんなの平均単価</h2>
+          <h2>積算計算</h2>
           <div class="grid2">
             <label>
               樹種
               <input id="calcSpecies" list="speciesList" placeholder="例: スギ" />
               <datalist id="speciesList"></datalist>
             </label>
-            <label>
-              都道府県
-              <select id="calcPrefecture">
-                <option value="">すべて</option>
-              </select>
-            </label>
-          </div>
-          <div id="avgResult" class="resultBox hidden">
-            <p>平均立米単価: <strong><span id="avgUnitPrice">-</span> 円/m³</strong>（<span id="avgCount">-</span>件）</p>
-            <button id="useAvgButton" type="button" class="chip-btn">この平均単価を積算に使う</button>
-          </div>
-          <p id="noDataMsg" class="status hidden">まだデータがありません。スキャンタブから価格を追加してみてください。</p>
-        </section>
-
-        <section class="card">
-          <h2>積算計算</h2>
-          <div class="grid2">
             <label class="full">
               立米単価 (円/m³)
               <div class="input-row">

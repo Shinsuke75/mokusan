@@ -15,7 +15,7 @@ const state = {
   mimeType: "image/jpeg",
   location: { prefecture: "", city: "", source: "manual" },
   selectedFile: null,
-  priceData: { recent: [], averages: [] },
+  priceData: { recent: [] },
   priceDataLoaded: false,
   list: JSON.parse(localStorage.getItem("mokusan_list") || "[]"),
   myPrices: JSON.parse(localStorage.getItem("mokusan_my_prices") || "{}")
@@ -61,12 +61,6 @@ const els = {
   listContent: getElement("listContent"),
   calcSpecies: getElement("calcSpecies"),
   speciesList: getElement("speciesList"),
-  calcPrefecture: getElement("calcPrefecture"),
-  avgResult: getElement("avgResult"),
-  avgUnitPrice: getElement("avgUnitPrice"),
-  avgCount: getElement("avgCount"),
-  useAvgButton: getElement("useAvgButton"),
-  noDataMsg: getElement("noDataMsg"),
   calcUnitPrice: getElement("calcUnitPrice"),
   saveUnitPriceButton: getElement("saveUnitPriceButton"),
   unitPriceSource: getElement("unitPriceSource"),
@@ -199,7 +193,7 @@ async function runScan() {
     els.note.value = data.note || "";
     calcVolumeAndUnitPrice();
     els.confirmSection.classList.remove("hidden");
-    els.scanStatus.textContent = "抽出結果を確認して送信してください。";
+    els.scanStatus.textContent = "抽出結果を確認して追加してください。";
   } catch (e) {
     els.scanStatus.textContent = `エラー: ${e.message}`;
   } finally {
@@ -242,7 +236,7 @@ async function submitRecord() {
       body: JSON.stringify(payload)
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "送信に失敗しました");
+    if (!res.ok) throw new Error(data.error || "追加に失敗しました");
     els.submitStatus.textContent = "追加しました！";
     els.doneSection.classList.remove("hidden");
   } catch (e) {
@@ -271,77 +265,30 @@ async function loadPriceData() {
     if (!res.ok) throw new Error(data.error || "データ取得に失敗しました");
     state.priceData = data;
     state.priceDataLoaded = true;
-    populateCalcDropdowns();
     renderRecentTable();
   } catch (e) {
     els.recentStatus.textContent = `エラー: ${e.message}`;
   }
 }
 
-function populateCalcDropdowns() {
-  const { averages } = state.priceData;
-  const speciesSet = [...new Set(averages.map((a) => a.species).filter(Boolean))];
-  els.speciesList.innerHTML = speciesSet.map((s) => `<option value="${s}">`).join("");
-  const prefSet = [...new Set(averages.map((a) => a.prefecture).filter(Boolean))].sort();
-  els.calcPrefecture.innerHTML = '<option value="">すべて</option>' +
-    prefSet.map((p) => `<option value="${p}">${p}</option>`).join("");
-  if (averages.length === 0) els.noDataMsg.classList.remove("hidden");
+// マイ単価から樹種の datalist を更新
+function refreshSpeciesList() {
+  const keys = Object.keys(state.myPrices);
+  els.speciesList.innerHTML = keys.map((s) => `<option value="${s}">`).join("");
 }
 
-function updateAvgDisplay() {
+// 樹種入力時にマイ単価を自動補完
+function onSpeciesChange() {
   const species = els.calcSpecies.value.trim();
-  const prefecture = els.calcPrefecture.value;
-  const { averages } = state.priceData;
-
-  // マイ単価が登録されていれば優先して使用
   if (species && state.myPrices[species] != null) {
     els.calcUnitPrice.value = state.myPrices[species];
     els.unitPriceSource.textContent = `マイ単価を使用中 (${Number(state.myPrices[species]).toLocaleString("ja-JP")} 円/m³)`;
     els.unitPriceSource.className = "hint-text my-price";
     updateCalcResult();
+  } else {
+    els.unitPriceSource.textContent = "";
+    els.unitPriceSource.className = "hint-text";
   }
-
-  if (!species || averages.length === 0) {
-    els.avgResult.classList.add("hidden");
-    if (!species || state.myPrices[species] == null) {
-      els.unitPriceSource.textContent = "";
-    }
-    return;
-  }
-
-  const matches = averages.filter((a) =>
-    a.species === species && (prefecture === "" || a.prefecture === prefecture)
-  );
-  if (matches.length === 0) {
-    els.avgResult.classList.add("hidden");
-    return;
-  }
-
-  const totalCount = matches.reduce((sum, m) => sum + m.count, 0);
-  const weightedAvg = Math.round(
-    matches.reduce((sum, m) => sum + m.avgUnitPrice * m.count, 0) / totalCount
-  );
-  els.avgUnitPrice.textContent = weightedAvg.toLocaleString("ja-JP");
-  els.avgCount.textContent = totalCount;
-  els.avgResult.classList.remove("hidden");
-
-  // マイ単価がない場合のみ平均で自動補完
-  if (state.myPrices[species] == null) {
-    els.calcUnitPrice.value = weightedAvg;
-    els.unitPriceSource.textContent = "みんなの平均から参照中";
-    els.unitPriceSource.className = "hint-text avg-price";
-    updateCalcResult();
-  }
-}
-
-function useAvgPrice() {
-  const avgText = els.avgUnitPrice.textContent.replace(/,/g, "");
-  const avg = Number(avgText);
-  if (!avg) return;
-  els.calcUnitPrice.value = avg;
-  els.unitPriceSource.textContent = "みんなの平均から参照中";
-  els.unitPriceSource.className = "hint-text avg-price";
-  updateCalcResult();
 }
 
 function saveUnitPrice() {
@@ -351,6 +298,7 @@ function saveUnitPrice() {
   if (!price) { alert("立米単価を入力してください。"); return; }
   state.myPrices[species] = price;
   localStorage.setItem("mokusan_my_prices", JSON.stringify(state.myPrices));
+  refreshSpeciesList();
   els.unitPriceSource.textContent = `マイ単価に保存しました (${price.toLocaleString("ja-JP")} 円/m³)`;
   els.unitPriceSource.className = "hint-text my-price";
 }
@@ -370,7 +318,7 @@ function updateCalcResult() {
 function renderRecentTable() {
   const { recent } = state.priceData;
   els.recentStatus.classList.add("hidden");
-  if (recent.length === 0) {
+  if (!recent || recent.length === 0) {
     els.recentTable.innerHTML = '<p class="status">まだ記録がありません。</p>';
     return;
   }
@@ -401,7 +349,7 @@ function addToList() {
   const qty = Math.max(1, toNumber(els.calcQty.value, 1));
 
   if (!width || !height || !length) {
-    alert("幅・高さ・長さを入力してください。");
+    alert("幅・厚み・長さを入力してください。");
     return;
   }
   if (!unitPrice) {
@@ -459,12 +407,12 @@ function renderList() {
   els.totalPrice.textContent = totalPri.toLocaleString("ja-JP");
   els.listTotal.classList.remove("hidden");
 
-  const rows = list.map((item, i) => `
+  const rows = list.map((item) => `
     <tr>
-      <td>${i + 1}</td>
       <td>${item.species}</td>
       <td class="dim">${item.widthMm}×${item.heightMm}×${item.lengthMm}</td>
       <td>${item.qty}本</td>
+      <td>${item.unitPrice.toLocaleString("ja-JP")}</td>
       <td>${item.volumeM3.toFixed(4)}</td>
       <td>${item.totalPrice.toLocaleString("ja-JP")}</td>
       <td><button class="del-btn" data-id="${item.id}">×</button></td>
@@ -472,10 +420,12 @@ function renderList() {
   `).join("");
 
   els.listTable.innerHTML = `
-    <table class="list-table">
-      <thead><tr><th>#</th><th>樹種</th><th>寸法(mm)</th><th>本数</th><th>体積(m³)</th><th>金額(円)</th><th></th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
+    <div class="list-table-wrap">
+      <table class="list-table">
+        <thead><tr><th>樹種</th><th>寸法(mm)</th><th>本数</th><th>単価(円/m³)</th><th>体積(m³)</th><th>金額(円)</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
   `;
 
   els.listTable.querySelectorAll(".del-btn").forEach((btn) => {
@@ -499,9 +449,7 @@ els.tabScan.addEventListener("click", () => switchTab("scan"));
 els.tabCalc.addEventListener("click", () => switchTab("calc"));
 els.tabList.addEventListener("click", () => switchTab("list"));
 
-els.calcSpecies.addEventListener("input", updateAvgDisplay);
-els.calcPrefecture.addEventListener("change", updateAvgDisplay);
-els.useAvgButton.addEventListener("click", useAvgPrice);
+els.calcSpecies.addEventListener("input", onSpeciesChange);
 els.saveUnitPriceButton.addEventListener("click", saveUnitPrice);
 els.addToListButton.addEventListener("click", addToList);
 els.clearListButton.addEventListener("click", clearList);
@@ -510,4 +458,5 @@ els.clearListButton.addEventListener("click", clearList);
   .forEach((input) => input.addEventListener("input", updateCalcResult));
 
 fillPrefectures();
+refreshSpeciesList();
 detectLocation();
