@@ -105,6 +105,8 @@ input, select {
   min-height: 44px;
 }
 .hint-text { font-size: 12px; font-weight: 400; margin-top: 4px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.chip { cursor: pointer; border: 1px solid #2563eb; border-radius: 20px; padding: 5px 14px; background: #eff6ff; color: #2563eb; font-size: 13px; font-weight: 600; }
 .hint-text.my-price { color: #16a34a; }
 .hint-text.avg-price { color: #6b7280; }
 

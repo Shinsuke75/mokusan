@@ -60,7 +60,7 @@ const els = {
   calcContent: getElement("calcContent"),
   listContent: getElement("listContent"),
   calcSpecies: getElement("calcSpecies"),
-  speciesList: getElement("speciesList"),
+  myPriceChips: getElement("myPriceChips"),
   calcUnitPrice: getElement("calcUnitPrice"),
   saveUnitPriceButton: getElement("saveUnitPriceButton"),
   unitPriceSource: getElement("unitPriceSource"),
@@ -271,10 +271,23 @@ async function loadPriceData() {
   }
 }
 
-// マイ単価から樹種の datalist を更新
-function refreshSpeciesList() {
+// 保存済みマイ単価のチップを描画
+function renderMyPriceChips() {
   const keys = Object.keys(state.myPrices);
-  els.speciesList.innerHTML = keys.map((s) => `<option value="${s}">`).join("");
+  if (keys.length === 0) {
+    els.myPriceChips.classList.add("hidden");
+    return;
+  }
+  els.myPriceChips.classList.remove("hidden");
+  els.myPriceChips.innerHTML = keys.map((s) =>
+    `<button type="button" class="chip" data-species="${s}">${s}</button>`
+  ).join("");
+  els.myPriceChips.querySelectorAll(".chip").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      els.calcSpecies.value = btn.dataset.species;
+      onSpeciesChange();
+    });
+  });
 }
 
 // 樹種入力時にマイ単価を自動補完
@@ -298,7 +311,7 @@ function saveUnitPrice() {
   if (!price) { alert("立米単価を入力してください。"); return; }
   state.myPrices[species] = price;
   localStorage.setItem("mokusan_my_prices", JSON.stringify(state.myPrices));
-  refreshSpeciesList();
+  renderMyPriceChips();
   els.unitPriceSource.textContent = `マイ単価に保存しました (${price.toLocaleString("ja-JP")} 円/m³)`;
   els.unitPriceSource.className = "hint-text my-price";
 }
@@ -458,5 +471,5 @@ els.clearListButton.addEventListener("click", clearList);
   .forEach((input) => input.addEventListener("input", updateCalcResult));
 
 fillPrefectures();
-refreshSpeciesList();
+renderMyPriceChips();
 detectLocation();
