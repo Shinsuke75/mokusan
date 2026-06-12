@@ -10,6 +10,8 @@ const MM3_TO_M3_DIVISOR = 1_000_000_000;
 const GEOLOCATION_TIMEOUT_MS = 8000;
 const GEOLOCATION_MAX_AGE_MS = 60000;
 
+const DEFAULT_SPECIES = ["スギ", "ヒノキ", "マツ", "SPF", "ホワイトウッド", "ラワン", "ナラ", "ウォルナット"];
+
 const state = {
   imageBase64: "",
   mimeType: "image/jpeg",
@@ -283,17 +285,14 @@ async function loadPriceData() {
   }
 }
 
-// リストにある樹種のチップを描画
+// リストにある樹種のチップを描画（デフォルト樹種を常に含む）
 function renderListChips() {
   const seen = new Set();
-  const species = state.list
+  const listSpecies = state.list
     .map((item) => item.species)
     .filter((s) => s && s !== "（未設定）" && !seen.has(s) && seen.add(s));
+  const species = [...listSpecies, ...DEFAULT_SPECIES.filter((s) => !seen.has(s))];
 
-  if (species.length === 0) {
-    els.myPriceChips.classList.add("hidden");
-    return;
-  }
   els.myPriceChips.classList.remove("hidden");
   els.myPriceChips.innerHTML = species.map((s) =>
     `<button type="button" class="chip" data-species="${s}">${s}</button>`
