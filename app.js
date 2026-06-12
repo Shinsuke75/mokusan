@@ -50,7 +50,6 @@ const els = {
   note: getElement("note"),
   volumeText: getElement("volumeText"),
   unitPriceText: getElement("unitPriceText"),
-  submitButton: getElement("submitButton"),
   addScanToListButton: getElement("addScanToListButton"),
   submitStatus: getElement("submitStatus"),
   doneSection: getElement("doneSection"),
@@ -259,44 +258,6 @@ async function addScanToList() {
   }
 
   switchTab("list");
-}
-
-async function submitRecord() {
-  const loc = currentLocation();
-  const { volumeM3, unitPrice } = calcVolumeAndUnitPrice();
-  if (loc.source !== "geo" && !loc.prefecture) { els.submitStatus.textContent = "都道府県を入力してください。"; return; }
-  if (volumeM3 <= 0) { els.submitStatus.textContent = "寸法・本数・価格を確認してください。"; return; }
-  els.submitButton.disabled = true;
-  els.submitStatus.textContent = "追加中...";
-  try {
-    const payload = {
-      date: new Date().toISOString(),
-      prefecture: loc.prefecture,
-      city: loc.city || "",
-      storeName: els.storeName.value || "",
-      species: els.species.value || "",
-      widthMm: toNumber(els.widthMm.value),
-      heightMm: toNumber(els.heightMm.value),
-      lengthMm: toNumber(els.lengthMm.value),
-      priceYen: toNumber(els.priceYen.value),
-      quantity: Math.max(1, toNumber(els.quantity.value, 1)),
-      unitPriceYenPerM3: Math.round(unitPrice),
-      note: els.note.value || ""
-    };
-    const res = await fetch("/api/append-sheet", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "追加に失敗しました");
-    els.submitStatus.textContent = "追加しました！";
-    els.doneSection.classList.remove("hidden");
-  } catch (e) {
-    els.submitStatus.textContent = `エラー: ${e.message}`;
-  } finally {
-    els.submitButton.disabled = false;
-  }
 }
 
 function switchTab(tab) {
@@ -509,7 +470,6 @@ els.galleryButton.addEventListener("click", () => els.galleryInput.click());
 els.cameraInput.addEventListener("change", () => { const f = els.cameraInput.files?.[0]; if (f) onFileSelected(f); });
 els.galleryInput.addEventListener("change", () => { const f = els.galleryInput.files?.[0]; if (f) onFileSelected(f); });
 els.scanButton.addEventListener("click", runScan);
-els.submitButton.addEventListener("click", submitRecord);
 els.addScanToListButton.addEventListener("click", addScanToList);
 
 els.tabScan.addEventListener("click", () => switchTab("scan"));
