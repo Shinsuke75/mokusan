@@ -310,10 +310,11 @@ async function loadPriceData() {
   }
 }
 
-// 樹種チップを描画（state.listの樹種を使用）
+// 樹種チップを描画（寸法入力済みの実材料のみ）
 function renderListChips() {
   const seen = new Set();
   const species = state.list
+    .filter((item) => item.volumeM3 > 0)
     .map((item) => item.species)
     .filter((s) => s && s !== "（未設定）" && !seen.has(s) && seen.add(s));
 
