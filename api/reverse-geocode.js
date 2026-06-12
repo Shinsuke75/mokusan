@@ -1,3 +1,5 @@
+import { checkRateLimit, getClientIp } from "./_ratelimit.js";
+
 function pickCity(address = {}) {
   return address.city || address.town || address.village || address.county || "";
 }
@@ -18,6 +20,9 @@ const NOMINATIM_ZOOM_LEVEL = 14;
 export default async function handler(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method Not Allowed" });
+  }
+  if (checkRateLimit(getClientIp(req), 30)) {
+    return res.status(429).json({ error: "Too Many Requests" });
   }
 
   const { lat, lon } = req.query || {};

@@ -1,4 +1,15 @@
 import { google } from "googleapis";
+import { checkRateLimit, isAllowedOrigin, getClientIp } from "./_ratelimit.js";
+
+function sanitizeStr(v, maxLen = 100) {
+  return String(v || "").replace(/<[^>]*>/g, "").trim().slice(0, maxLen);
+}
+
+function sanitizeNum(v, min = 0, max = 100_000_000) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return 0;
+  return Math.min(max, Math.max(min, n));
+}
 
 function getSheetsClient() {
   const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
@@ -27,6 +38,12 @@ export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
+  if (!isAllowedOrigin(req)) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+  if (checkRateLimit(getClientIp(req), 20)) {
+    return res.status(429).json({ error: "リクエストが多すぎます。しばらくしてからお試しください。" });
+  }
 
   try {
     const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID;
@@ -39,17 +56,17 @@ export default async function handler(req, res) {
     const body = req.body || {};
     const row = [
       formatDate(body.date),
-      body.prefecture || "",
-      body.city || "",
-      body.storeName || "",
-      body.species || "",
-      Number(body.widthMm || 0),
-      Number(body.heightMm || 0),
-      Number(body.lengthMm || 0),
-      Number(body.priceYen || 0),
-      Number(body.quantity || 1),
-      Number(body.unitPriceYenPerM3 || 0),
-      body.note || ""
+      sanitizeStr(body.prefecture, 20),
+      sanitizeStr(body.city, 50),
+      sanitizeStr(body.storeName, 100),
+      sanitizeStr(body.species, 100),
+      sanitizeNum(body.widthMm, 0, 10_000),
+      sanitizeNum(body.heightMm, 0, 10_000),
+      sanitizeNum(body.lengthMm, 0, 100_000),
+      sanitizeNum(body.priceYen, 0, 10_000_000),
+      sanitizeNum(body.quantity, 0, 10_000),
+      sanitizeNum(body.unitPriceYenPerM3, 0, 100_000_000),
+      sanitizeStr(body.note, 200)
     ];
 
     const sheets = getSheetsClient();

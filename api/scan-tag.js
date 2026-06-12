@@ -1,3 +1,5 @@
+import { checkRateLimit, isAllowedOrigin, getClientIp } from "./_ratelimit.js";
+
 function safeNumber(value, fallback = 0) {
   const n = Number(value);
   return Number.isFinite(n) ? n : fallback;
@@ -44,6 +46,12 @@ export const config = {
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
+  }
+  if (!isAllowedOrigin(req)) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+  if (checkRateLimit(getClientIp(req), 10)) {
+    return res.status(429).json({ error: "リクエストが多すぎます。しばらくしてからお試しください。" });
   }
 
   const apiKey = process.env.GEMINI_API_KEY;

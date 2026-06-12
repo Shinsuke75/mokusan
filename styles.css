@@ -116,6 +116,22 @@ input, select {
 .meta-section { margin-top: 16px; border-top: 1px solid #e5e7eb; padding-top: 12px; }
 .meta-label { font-size: 13px; font-weight: 600; color: #6b7280; margin: 0 0 8px; }
 
+/* 同意チェックボックス */
+.consent-label {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 13px; font-weight: 400; color: #4b5563;
+  margin-top: 12px; cursor: pointer; line-height: 1.5;
+}
+.consent-label input[type="checkbox"] {
+  width: 18px; height: 18px; min-height: auto; flex-shrink: 0; margin-top: 2px; cursor: pointer;
+}
+
+/* フッター */
+.app-footer {
+  text-align: center; padding: 20px 0 12px; font-size: 12px;
+}
+.app-footer a { color: #6b7280; text-decoration: underline; }
+
 /* 材料リスト カード */
 .list-cards { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
 .list-card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 12px; background: #fff; }

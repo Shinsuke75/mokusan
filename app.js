@@ -77,6 +77,7 @@ const els = {
   note: getElement("note"),
   volumeText: getElement("volumeText"),
   unitPriceText: getElement("unitPriceText"),
+  shareConsent: getElement("shareConsent"),
   addScanToListButton: getElement("addScanToListButton"),
   submitStatus: getElement("submitStatus"),
   doneSection: getElement("doneSection"),
@@ -168,6 +169,14 @@ function compressImage(file, maxPx = 1200, quality = 0.75) {
   });
 }
 
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 function toNumber(v, fallback = 0) {
   const n = Number(v);
   return Number.isFinite(n) ? n : fallback;
@@ -255,7 +264,11 @@ async function addScanToList() {
   localStorage.setItem("mokusan_list", JSON.stringify(state.list));
   renderListChips();
 
-  // 価格表にも同時登録
+  // 価格表にも同時登録（同意チェック時のみ）
+  if (!els.shareConsent.checked) {
+    switchTab("list");
+    return;
+  }
   els.addScanToListButton.disabled = true;
   els.submitStatus.textContent = "登録中...";
   try {
@@ -383,9 +396,9 @@ function renderRecentTable() {
   }
   const rows = recent.map((r) => `
     <tr>
-      <td>${r.date}</td>
-      <td>${r.prefecture}${r.city ? " " + r.city : ""}</td>
-      <td>${r.species || "-"}</td>
+      <td>${escapeHtml(r.date)}</td>
+      <td>${escapeHtml(r.prefecture)}${r.city ? " " + escapeHtml(r.city) : ""}</td>
+      <td>${escapeHtml(r.species || "-")}</td>
       <td>${r.unitPrice.toLocaleString("ja-JP")}</td>
     </tr>
   `).join("");
