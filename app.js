@@ -209,7 +209,8 @@ function currentLocation() {
   return state.location;
 }
 
-function addScanToList() {
+async function addScanToList() {
+  const loc = currentLocation();
   const width = toNumber(els.widthMm.value);
   const height = toNumber(els.heightMm.value);
   const length = toNumber(els.lengthMm.value);
@@ -221,18 +222,42 @@ function addScanToList() {
   const volumeM3 = (width * height * length * qty) / MM3_TO_M3_DIVISOR;
   const unitPrice = volumeM3 > 0 ? priceYen / volumeM3 : 0;
 
+  // 材料リストに追加
   state.list.push({
     id: Date.now(),
     species: els.species.value || "（未設定）",
-    widthMm: width,
-    heightMm: height,
-    lengthMm: length,
-    qty,
-    unitPrice: Math.round(unitPrice),
-    volumeM3,
-    totalPrice: priceYen
+    widthMm: width, heightMm: height, lengthMm: length,
+    qty, unitPrice: Math.round(unitPrice), volumeM3, totalPrice: priceYen
   });
   localStorage.setItem("mokusan_list", JSON.stringify(state.list));
+
+  // みんなの価格表にも同時登録
+  els.addScanToListButton.disabled = true;
+  els.submitStatus.textContent = "登録中...";
+  try {
+    const payload = {
+      date: new Date().toISOString(),
+      prefecture: loc.prefecture || "",
+      city: loc.city || "",
+      storeName: els.storeName.value || "",
+      species: els.species.value || "",
+      widthMm: width, heightMm: height, lengthMm: length,
+      priceYen, quantity: qty,
+      unitPriceYenPerM3: Math.round(unitPrice),
+      note: els.note.value || ""
+    };
+    await fetch("/api/append-sheet", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+  } catch (e) {
+    console.warn("価格表への登録に失敗:", e.message);
+  } finally {
+    els.addScanToListButton.disabled = false;
+    els.submitStatus.textContent = "";
+  }
+
   switchTab("list");
 }
 
