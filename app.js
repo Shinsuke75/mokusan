@@ -521,35 +521,27 @@ function renderList() {
     els.shareButton.classList.add("hidden");
   }
 
-  const rows = list.map((item) => {
+  const cards = list.map((item) => {
     const hasVolume = item.volumeM3 > 0;
-    const dimStr = hasVolume ? `${item.widthMm}×${item.heightMm}×${item.lengthMm}` : "-";
-    const qtyStr = hasVolume
-      ? `<div class="qty-stepper"><button class="qty-btn" data-id="${item.id}" data-delta="-1">－</button><span>${item.qty}</span><button class="qty-btn" data-id="${item.id}" data-delta="1">＋</button></div>`
-      : "-";
-    const volStr = hasVolume ? item.volumeM3.toFixed(4) : "-";
-    const priceStr = hasVolume ? item.totalPrice.toLocaleString("ja-JP") : "-";
+    const bodyHTML = hasVolume
+      ? `<div class="list-card-meta">${item.widthMm}×${item.heightMm}×${item.lengthMm}mm &nbsp;|&nbsp; 単価 ${item.unitPrice.toLocaleString("ja-JP")}円/m³</div>
+         <div class="list-card-footer">
+           <div class="qty-stepper"><button class="qty-btn" data-id="${item.id}" data-delta="-1">－</button><span>${item.qty}本</span><button class="qty-btn" data-id="${item.id}" data-delta="1">＋</button></div>
+           <span class="list-card-price">${item.totalPrice.toLocaleString("ja-JP")} 円</span>
+         </div>`
+      : `<div class="list-card-meta">参照単価 ${item.unitPrice.toLocaleString("ja-JP")}円/m³</div>`;
     return `
-      <tr>
-        <td>${item.species}</td>
-        <td class="dim">${dimStr}</td>
-        <td>${qtyStr}</td>
-        <td>${item.unitPrice.toLocaleString("ja-JP")}</td>
-        <td>${volStr}</td>
-        <td>${priceStr}</td>
-        <td><button class="del-btn" data-id="${item.id}">×</button></td>
-      </tr>
+      <div class="list-card${hasVolume ? "" : " list-card--ref"}">
+        <div class="list-card-header">
+          <span class="list-card-species">${item.species}</span>
+          <button class="del-btn" data-id="${item.id}">×</button>
+        </div>
+        ${bodyHTML}
+      </div>
     `;
   }).join("");
 
-  els.listTable.innerHTML = `
-    <div class="list-table-wrap">
-      <table class="list-table">
-        <thead><tr><th>樹種</th><th>寸法(mm)</th><th>本数</th><th>単価(円/m³)</th><th>体積(m³)</th><th>金額(円)</th><th></th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>
-  `;
+  els.listTable.innerHTML = `<div class="list-cards">${cards}</div>`;
 
   els.listTable.querySelectorAll(".del-btn").forEach((btn) => {
     btn.addEventListener("click", () => removeFromList(btn.dataset.id));
