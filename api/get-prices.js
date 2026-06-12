@@ -38,7 +38,6 @@ export default async function handler(req, res) {
       date: row[0] || "",
       prefecture: row[1] || "",
       city: row[2] || "",
-      storeName: row[3] || "",
       species: row[4] || "",
       unitPrice: Number(row[10]) || 0
     }));
