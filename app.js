@@ -220,7 +220,7 @@ async function submitRecord() {
   if (loc.source !== "geo" && !loc.prefecture) { els.submitStatus.textContent = "都道府県を入力してください。"; return; }
   if (volumeM3 <= 0) { els.submitStatus.textContent = "寸法・本数・価格を確認してください。"; return; }
   els.submitButton.disabled = true;
-  els.submitStatus.textContent = "送信中...";
+  els.submitStatus.textContent = "追加中...";
   try {
     const payload = {
       date: new Date().toISOString(),
@@ -243,7 +243,7 @@ async function submitRecord() {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "送信に失敗しました");
-    els.submitStatus.textContent = "記録しました。";
+    els.submitStatus.textContent = "追加しました！";
     els.doneSection.classList.remove("hidden");
   } catch (e) {
     els.submitStatus.textContent = `エラー: ${e.message}`;
