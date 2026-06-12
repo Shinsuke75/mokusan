@@ -112,7 +112,7 @@ input, select {
 .hint-text.my-price { color: #16a34a; }
 .hint-text.avg-price { color: #6b7280; }
 
-/* 場所・店舗メタ情報 */
+/* 場所メタ情報 */
 .meta-section { margin-top: 16px; border-top: 1px solid #e5e7eb; padding-top: 12px; }
 .meta-label { font-size: 13px; font-weight: 600; color: #6b7280; margin: 0 0 8px; }
 

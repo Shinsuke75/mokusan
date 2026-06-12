@@ -281,7 +281,6 @@ async function addScanToList() {
       date: new Date().toISOString(),
       prefecture: loc.prefecture || "",
       city: loc.city || "",
-      storeName: "",
       species: els.species.value || "",
       widthMm: width, heightMm: height, lengthMm: length,
       priceYen: rawPriceYen, quantity: 1,

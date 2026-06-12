@@ -58,7 +58,7 @@ export default async function handler(req, res) {
       formatDate(body.date),
       sanitizeStr(body.prefecture, 20),
       sanitizeStr(body.city, 50),
-      sanitizeStr(body.storeName, 100),
+      "",
       sanitizeStr(body.species, 100),
       sanitizeNum(body.widthMm, 0, 10_000),
       sanitizeNum(body.heightMm, 0, 10_000),
