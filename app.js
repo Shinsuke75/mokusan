@@ -17,21 +17,8 @@ const state = {
   selectedFile: null,
   priceData: { recent: [] },
   priceDataLoaded: false,
-  list: JSON.parse(localStorage.getItem("mokusan_list") || "[]"),
-  myPrices: JSON.parse(localStorage.getItem("mokusan_my_prices") || "{}")
+  list: JSON.parse(localStorage.getItem("mokusan_list") || "[]")
 };
-
-// 既存リストの樹種・単価をmyPricesに取り込む（移行処理）
-(() => {
-  let updated = false;
-  state.list.forEach((item) => {
-    if (item.species && item.species !== "（未設定）" && item.unitPrice > 0 && state.myPrices[item.species] == null) {
-      state.myPrices[item.species] = item.unitPrice;
-      updated = true;
-    }
-  });
-  if (updated) localStorage.setItem("mokusan_my_prices", JSON.stringify(state.myPrices));
-})();
 
 const getElement = (id) => document.getElementById(id);
 
@@ -74,7 +61,6 @@ const els = {
   calcSpecies: getElement("calcSpecies"),
   myPriceChips: getElement("myPriceChips"),
   calcUnitPrice: getElement("calcUnitPrice"),
-  saveUnitPriceButton: getElement("saveUnitPriceButton"),
   unitPriceSource: getElement("unitPriceSource"),
   calcWidth: getElement("calcWidth"),
   calcHeight: getElement("calcHeight"),
@@ -233,7 +219,6 @@ async function addScanToList() {
   const volumeM3 = (width * height * length * qty) / MM3_TO_M3_DIVISOR;
   const unitPrice = volumeM3 > 0 ? priceYen / volumeM3 : 0;
 
-  // 材料リストに追加
   state.list.push({
     id: Date.now(),
     species: els.species.value || "（未設定）",
@@ -241,16 +226,9 @@ async function addScanToList() {
     qty, unitPrice: Math.round(unitPrice), volumeM3, totalPrice: priceYen
   });
   localStorage.setItem("mokusan_list", JSON.stringify(state.list));
+  renderListChips();
 
-  // スキャンした樹種・単価をマイ単価に自動保存（計算タブのチップに反映）
-  const species = els.species.value.trim();
-  if (species && unitPrice > 0) {
-    state.myPrices[species] = Math.round(unitPrice);
-    localStorage.setItem("mokusan_my_prices", JSON.stringify(state.myPrices));
-    renderMyPriceChips();
-  }
-
-  // みんなの価格表にも同時登録
+  // 価格表にも同時登録
   els.addScanToListButton.disabled = true;
   els.submitStatus.textContent = "登録中...";
   try {
@@ -305,15 +283,19 @@ async function loadPriceData() {
   }
 }
 
-// 保存済みマイ単価のチップを描画
-function renderMyPriceChips() {
-  const keys = Object.keys(state.myPrices);
-  if (keys.length === 0) {
+// リストにある樹種のチップを描画
+function renderListChips() {
+  const seen = new Set();
+  const species = state.list
+    .map((item) => item.species)
+    .filter((s) => s && s !== "（未設定）" && !seen.has(s) && seen.add(s));
+
+  if (species.length === 0) {
     els.myPriceChips.classList.add("hidden");
     return;
   }
   els.myPriceChips.classList.remove("hidden");
-  els.myPriceChips.innerHTML = keys.map((s) =>
+  els.myPriceChips.innerHTML = species.map((s) =>
     `<button type="button" class="chip" data-species="${s}">${s}</button>`
   ).join("");
   els.myPriceChips.querySelectorAll(".chip").forEach((btn) => {
@@ -324,30 +306,23 @@ function renderMyPriceChips() {
   });
 }
 
-// 樹種入力時にマイ単価を自動補完
+// 樹種入力時にリストの最新単価を自動補完
 function onSpeciesChange() {
   const species = els.calcSpecies.value.trim();
-  if (species && state.myPrices[species] != null) {
-    els.calcUnitPrice.value = state.myPrices[species];
-    els.unitPriceSource.textContent = `マイ単価を使用中 (${Number(state.myPrices[species]).toLocaleString("ja-JP")} 円/m³)`;
-    els.unitPriceSource.className = "hint-text my-price";
+  if (!species) {
+    els.unitPriceSource.textContent = "";
+    return;
+  }
+  const match = [...state.list].reverse().find((item) => item.species === species);
+  if (match) {
+    els.calcUnitPrice.value = match.unitPrice;
+    els.unitPriceSource.textContent = `リストから参照 (${match.unitPrice.toLocaleString("ja-JP")} 円/m³)`;
+    els.unitPriceSource.className = "hint-text avg-price";
     updateCalcResult();
   } else {
     els.unitPriceSource.textContent = "";
     els.unitPriceSource.className = "hint-text";
   }
-}
-
-function saveUnitPrice() {
-  const species = els.calcSpecies.value.trim();
-  const price = toNumber(els.calcUnitPrice.value);
-  if (!species) { alert("樹種を入力してください。"); return; }
-  if (!price) { alert("立米単価を入力してください。"); return; }
-  state.myPrices[species] = price;
-  localStorage.setItem("mokusan_my_prices", JSON.stringify(state.myPrices));
-  renderMyPriceChips();
-  els.unitPriceSource.textContent = `マイ単価に保存しました (${price.toLocaleString("ja-JP")} 円/m³)`;
-  els.unitPriceSource.className = "hint-text my-price";
 }
 
 function updateCalcResult() {
@@ -385,7 +360,7 @@ function renderRecentTable() {
   `;
 }
 
-// ===== 材料リスト機能 =====
+// ===== リスト機能 =====
 
 function addToList() {
   const species = els.calcSpecies.value.trim();
@@ -395,14 +370,8 @@ function addToList() {
   const length = toNumber(els.calcLength.value);
   const qty = Math.max(1, toNumber(els.calcQty.value, 1));
 
-  if (!width || !height || !length) {
-    alert("幅・厚み・長さを入力してください。");
-    return;
-  }
-  if (!unitPrice) {
-    alert("立米単価を入力してください。");
-    return;
-  }
+  if (!width || !height || !length) { alert("幅・厚み・長さを入力してください。"); return; }
+  if (!unitPrice) { alert("立米単価を入力してください。"); return; }
 
   const volumeM3 = (width * height * length * qty) / MM3_TO_M3_DIVISOR;
   const totalPrice = Math.round(volumeM3 * unitPrice);
@@ -410,15 +379,11 @@ function addToList() {
   state.list.push({
     id: Date.now(),
     species: species || "（未設定）",
-    widthMm: width,
-    heightMm: height,
-    lengthMm: length,
-    qty,
-    unitPrice,
-    volumeM3,
-    totalPrice
+    widthMm: width, heightMm: height, lengthMm: length,
+    qty, unitPrice, volumeM3, totalPrice
   });
   localStorage.setItem("mokusan_list", JSON.stringify(state.list));
+  renderListChips();
   switchTab("list");
 }
 
@@ -426,6 +391,7 @@ function removeFromList(id) {
   state.list = state.list.filter((item) => item.id !== id);
   localStorage.setItem("mokusan_list", JSON.stringify(state.list));
   renderList();
+  renderListChips();
 }
 
 function clearList() {
@@ -433,6 +399,7 @@ function clearList() {
   state.list = [];
   localStorage.removeItem("mokusan_list");
   renderList();
+  renderListChips();
 }
 
 function renderList() {
@@ -497,7 +464,6 @@ els.tabCalc.addEventListener("click", () => switchTab("calc"));
 els.tabList.addEventListener("click", () => switchTab("list"));
 
 els.calcSpecies.addEventListener("input", onSpeciesChange);
-els.saveUnitPriceButton.addEventListener("click", saveUnitPrice);
 els.addToListButton.addEventListener("click", addToList);
 els.clearListButton.addEventListener("click", clearList);
 
@@ -505,5 +471,5 @@ els.clearListButton.addEventListener("click", clearList);
   .forEach((input) => input.addEventListener("input", updateCalcResult));
 
 fillPrefectures();
-renderMyPriceChips();
+renderListChips();
 detectLocation();
