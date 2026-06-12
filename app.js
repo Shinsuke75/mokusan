@@ -65,7 +65,6 @@ const els = {
   galleryInput: getElement("galleryInput"),
   photoPreview: getElement("photoPreview"),
   photoName: getElement("photoName"),
-  storeName: getElement("storeName"),
   scanButton: getElement("scanButton"),
   scanStatus: getElement("scanStatus"),
   confirmSection: getElement("confirmSection"),
@@ -229,6 +228,7 @@ async function runScan() {
     els.heightMm.value = data.heightMm || "";
     els.lengthMm.value = data.lengthMm || "";
     els.priceYen.value = data.priceYen || "";
+    els.taxIncluded.checked = data.taxIncluded || false;
     els.note.value = data.note || "";
     calcVolumeAndUnitPrice();
     els.confirmSection.classList.remove("hidden");
@@ -281,7 +281,7 @@ async function addScanToList() {
       date: new Date().toISOString(),
       prefecture: loc.prefecture || "",
       city: loc.city || "",
-      storeName: els.storeName.value || "",
+      storeName: "",
       species: els.species.value || "",
       widthMm: width, heightMm: height, lengthMm: length,
       priceYen: rawPriceYen, quantity: 1,
