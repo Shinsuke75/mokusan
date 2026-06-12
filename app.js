@@ -482,7 +482,7 @@ function renderList() {
     els.listTable.innerHTML = "";
     els.listTotal.classList.add("hidden");
     els.shareButton.classList.add("hidden");
-    els.resetListButton.classList.add("hidden");
+    els.resetListButton.classList.remove("hidden");
     els.clearListButton.classList.add("hidden");
     return;
   }
