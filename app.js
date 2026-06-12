@@ -74,7 +74,6 @@ const els = {
   widthMm: getElement("widthMm"),
   heightMm: getElement("heightMm"),
   lengthMm: getElement("lengthMm"),
-  quantity: getElement("quantity"),
   note: getElement("note"),
   volumeText: getElement("volumeText"),
   unitPriceText: getElement("unitPriceText"),
@@ -178,9 +177,8 @@ function calcVolumeAndUnitPrice() {
   const width = toNumber(els.widthMm.value);
   const height = toNumber(els.heightMm.value);
   const length = toNumber(els.lengthMm.value);
-  const qty = Math.max(1, toNumber(els.quantity.value, 1));
   const price = toNumber(els.priceYen.value);
-  const volumeM3 = (width * height * length * qty) / MM3_TO_M3_DIVISOR;
+  const volumeM3 = (width * height * length) / MM3_TO_M3_DIVISOR;
   const unitPrice = volumeM3 > 0 ? price / volumeM3 : 0;
   els.volumeText.textContent = volumeM3 > 0 ? volumeM3.toFixed(6) : "-";
   els.unitPriceText.textContent = volumeM3 > 0 ? Math.round(unitPrice).toLocaleString("ja-JP") : "-";
@@ -218,7 +216,6 @@ async function runScan() {
     els.heightMm.value = data.heightMm || "";
     els.lengthMm.value = data.lengthMm || "";
     els.priceYen.value = data.priceYen || "";
-    els.quantity.value = data.quantity || 1;
     els.note.value = data.note || "";
     calcVolumeAndUnitPrice();
     els.confirmSection.classList.remove("hidden");
@@ -242,19 +239,18 @@ async function addScanToList() {
   const width = toNumber(els.widthMm.value);
   const height = toNumber(els.heightMm.value);
   const length = toNumber(els.lengthMm.value);
-  const qty = Math.max(1, toNumber(els.quantity.value, 1));
   const priceYen = toNumber(els.priceYen.value);
 
   if (!width || !height || !length) { alert("寸法を確認してください。"); return; }
 
-  const volumeM3 = (width * height * length * qty) / MM3_TO_M3_DIVISOR;
+  const volumeM3 = (width * height * length) / MM3_TO_M3_DIVISOR;
   const unitPrice = volumeM3 > 0 ? priceYen / volumeM3 : 0;
 
   state.list.push({
     id: Date.now(),
     species: els.species.value || "（未設定）",
     widthMm: width, heightMm: height, lengthMm: length,
-    qty, unitPrice: Math.round(unitPrice), volumeM3, totalPrice: priceYen
+    qty: 1, unitPrice: Math.round(unitPrice), volumeM3, totalPrice: priceYen
   });
   localStorage.setItem("mokusan_list", JSON.stringify(state.list));
   renderListChips();
@@ -270,7 +266,7 @@ async function addScanToList() {
       storeName: els.storeName.value || "",
       species: els.species.value || "",
       widthMm: width, heightMm: height, lengthMm: length,
-      priceYen, quantity: qty,
+      priceYen, quantity: 1,
       unitPriceYenPerM3: Math.round(unitPrice),
       note: els.note.value || ""
     };
@@ -428,6 +424,17 @@ function addToList() {
   switchTab("list");
 }
 
+function updateListQty(id, delta) {
+  const item = state.list.find((i) => String(i.id) === String(id));
+  if (!item || item.volumeM3 <= 0) return;
+  const perPieceVol = item.widthMm * item.heightMm * item.lengthMm / MM3_TO_M3_DIVISOR;
+  item.qty = Math.max(1, item.qty + delta);
+  item.volumeM3 = perPieceVol * item.qty;
+  item.totalPrice = Math.round(item.unitPrice * item.volumeM3);
+  localStorage.setItem("mokusan_list", JSON.stringify(state.list));
+  renderList();
+}
+
 function removeFromList(id) {
   state.list = state.list.filter((item) => String(item.id) !== String(id));
   localStorage.setItem("mokusan_list", JSON.stringify(state.list));
@@ -517,7 +524,9 @@ function renderList() {
   const rows = list.map((item) => {
     const hasVolume = item.volumeM3 > 0;
     const dimStr = hasVolume ? `${item.widthMm}×${item.heightMm}×${item.lengthMm}` : "-";
-    const qtyStr = hasVolume ? `${item.qty}本` : "-";
+    const qtyStr = hasVolume
+      ? `<div class="qty-stepper"><button class="qty-btn" data-id="${item.id}" data-delta="-1">－</button><span>${item.qty}</span><button class="qty-btn" data-id="${item.id}" data-delta="1">＋</button></div>`
+      : "-";
     const volStr = hasVolume ? item.volumeM3.toFixed(4) : "-";
     const priceStr = hasVolume ? item.totalPrice.toLocaleString("ja-JP") : "-";
     return `
@@ -545,11 +554,14 @@ function renderList() {
   els.listTable.querySelectorAll(".del-btn").forEach((btn) => {
     btn.addEventListener("click", () => removeFromList(btn.dataset.id));
   });
+  els.listTable.querySelectorAll(".qty-btn").forEach((btn) => {
+    btn.addEventListener("click", () => updateListQty(btn.dataset.id, Number(btn.dataset.delta)));
+  });
 }
 
 // ===== イベントリスナー =====
 
-[els.widthMm, els.heightMm, els.lengthMm, els.quantity, els.priceYen]
+[els.widthMm, els.heightMm, els.lengthMm, els.priceYen]
   .forEach((input) => input.addEventListener("input", calcVolumeAndUnitPrice));
 
 els.cameraButton.addEventListener("click", () => els.cameraInput.click());
