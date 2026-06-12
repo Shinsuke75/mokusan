@@ -10,7 +10,26 @@ const MM3_TO_M3_DIVISOR = 1_000_000_000;
 const GEOLOCATION_TIMEOUT_MS = 8000;
 const GEOLOCATION_MAX_AGE_MS = 60000;
 
-const DEFAULT_SPECIES = ["スギ", "ヒノキ", "マツ", "SPF", "ホワイトウッド", "ラワン", "ナラ", "ウォルナット"];
+const DEFAULT_LIST = [
+  { species: "スギ（製材品）",  unitPrice: 68200 },
+  { species: "ヒノキ（製材品）", unitPrice: 85000 },
+  { species: "2×4材（SPF）",  unitPrice: 71500 },
+  { species: "ホワイトウッド",  unitPrice: 70000 },
+  { species: "ナラ",          unitPrice: 865000 },
+  { species: "タモ",          unitPrice: 790000 },
+  { species: "ウォルナット",   unitPrice: 1100000 },
+];
+
+function makeDefaultEntries() {
+  return DEFAULT_LIST.map((d, i) => ({
+    id: `default_${i}`,
+    species: d.species,
+    unitPrice: d.unitPrice,
+    isDefault: true,
+    widthMm: 0, heightMm: 0, lengthMm: 0,
+    qty: 0, volumeM3: 0, totalPrice: 0
+  }));
+}
 
 const state = {
   imageBase64: "",
@@ -19,7 +38,11 @@ const state = {
   selectedFile: null,
   priceData: { recent: [] },
   priceDataLoaded: false,
-  list: JSON.parse(localStorage.getItem("mokusan_list") || "[]")
+  list: (() => {
+    const saved = localStorage.getItem("mokusan_list");
+    if (saved !== null) return JSON.parse(saved);
+    return makeDefaultEntries();
+  })()
 };
 
 const getElement = (id) => document.getElementById(id);
@@ -78,6 +101,7 @@ const els = {
   listTotal: getElement("listTotal"),
   totalVolume: getElement("totalVolume"),
   totalPrice: getElement("totalPrice"),
+  resetListButton: getElement("resetListButton"),
   clearListButton: getElement("clearListButton")
 };
 
@@ -285,15 +309,16 @@ async function loadPriceData() {
   }
 }
 
-// リストにある樹種のチップを描画（デフォルト樹種を常に含む）
+// 樹種チップを描画（state.listの樹種を使用）
 function renderListChips() {
   const seen = new Set();
-  const listSpecies = state.list
+  const species = state.list
     .map((item) => item.species)
     .filter((s) => s && s !== "（未設定）" && !seen.has(s) && seen.add(s));
-  const species = [...listSpecies, ...DEFAULT_SPECIES.filter((s) => !seen.has(s))];
 
-  els.myPriceChips.classList.remove("hidden");
+  els.myPriceChips.classList.toggle("hidden", species.length === 0);
+  if (species.length === 0) return;
+
   els.myPriceChips.innerHTML = species.map((s) =>
     `<button type="button" class="chip" data-species="${s}">${s}</button>`
   ).join("");
@@ -387,7 +412,7 @@ function addToList() {
 }
 
 function removeFromList(id) {
-  state.list = state.list.filter((item) => item.id !== id);
+  state.list = state.list.filter((item) => String(item.id) !== String(id));
   localStorage.setItem("mokusan_list", JSON.stringify(state.list));
   renderList();
   renderListChips();
@@ -396,7 +421,15 @@ function removeFromList(id) {
 function clearList() {
   if (!confirm("リストをすべて削除しますか？")) return;
   state.list = [];
-  localStorage.removeItem("mokusan_list");
+  localStorage.setItem("mokusan_list", JSON.stringify(state.list));
+  renderList();
+  renderListChips();
+}
+
+function resetToDefaults() {
+  if (!confirm("リストを初期値に戻しますか？\n追加した項目はすべて削除されます。")) return;
+  state.list = makeDefaultEntries();
+  localStorage.setItem("mokusan_list", JSON.stringify(state.list));
   renderList();
   renderListChips();
 }
@@ -407,30 +440,45 @@ function renderList() {
     els.listEmpty.classList.remove("hidden");
     els.listTable.innerHTML = "";
     els.listTotal.classList.add("hidden");
+    els.resetListButton.classList.add("hidden");
     els.clearListButton.classList.add("hidden");
     return;
   }
 
   els.listEmpty.classList.add("hidden");
+  els.resetListButton.classList.remove("hidden");
   els.clearListButton.classList.remove("hidden");
 
-  const totalVol = list.reduce((sum, item) => sum + item.volumeM3, 0);
-  const totalPri = list.reduce((sum, item) => sum + item.totalPrice, 0);
-  els.totalVolume.textContent = totalVol.toFixed(4);
-  els.totalPrice.textContent = totalPri.toLocaleString("ja-JP");
-  els.listTotal.classList.remove("hidden");
+  // 合計は実際の材料（寸法入力済み）のみ集計
+  const realItems = list.filter((item) => item.volumeM3 > 0);
+  if (realItems.length > 0) {
+    const totalVol = realItems.reduce((sum, item) => sum + item.volumeM3, 0);
+    const totalPri = realItems.reduce((sum, item) => sum + item.totalPrice, 0);
+    els.totalVolume.textContent = totalVol.toFixed(4);
+    els.totalPrice.textContent = totalPri.toLocaleString("ja-JP");
+    els.listTotal.classList.remove("hidden");
+  } else {
+    els.listTotal.classList.add("hidden");
+  }
 
-  const rows = list.map((item) => `
-    <tr>
-      <td>${item.species}</td>
-      <td class="dim">${item.widthMm}×${item.heightMm}×${item.lengthMm}</td>
-      <td>${item.qty}本</td>
-      <td>${item.unitPrice.toLocaleString("ja-JP")}</td>
-      <td>${item.volumeM3.toFixed(4)}</td>
-      <td>${item.totalPrice.toLocaleString("ja-JP")}</td>
-      <td><button class="del-btn" data-id="${item.id}">×</button></td>
-    </tr>
-  `).join("");
+  const rows = list.map((item) => {
+    const hasVolume = item.volumeM3 > 0;
+    const dimStr = hasVolume ? `${item.widthMm}×${item.heightMm}×${item.lengthMm}` : "-";
+    const qtyStr = hasVolume ? `${item.qty}本` : "-";
+    const volStr = hasVolume ? item.volumeM3.toFixed(4) : "-";
+    const priceStr = hasVolume ? item.totalPrice.toLocaleString("ja-JP") : "-";
+    return `
+      <tr>
+        <td>${item.species}</td>
+        <td class="dim">${dimStr}</td>
+        <td>${qtyStr}</td>
+        <td>${item.unitPrice.toLocaleString("ja-JP")}</td>
+        <td>${volStr}</td>
+        <td>${priceStr}</td>
+        <td><button class="del-btn" data-id="${item.id}">×</button></td>
+      </tr>
+    `;
+  }).join("");
 
   els.listTable.innerHTML = `
     <div class="list-table-wrap">
@@ -442,7 +490,7 @@ function renderList() {
   `;
 
   els.listTable.querySelectorAll(".del-btn").forEach((btn) => {
-    btn.addEventListener("click", () => removeFromList(Number(btn.dataset.id)));
+    btn.addEventListener("click", () => removeFromList(btn.dataset.id));
   });
 }
 
@@ -464,6 +512,7 @@ els.tabList.addEventListener("click", () => switchTab("list"));
 
 els.calcSpecies.addEventListener("input", onSpeciesChange);
 els.addToListButton.addEventListener("click", addToList);
+els.resetListButton.addEventListener("click", resetToDefaults);
 els.clearListButton.addEventListener("click", clearList);
 
 [els.calcUnitPrice, els.calcWidth, els.calcHeight, els.calcLength, els.calcQty]
