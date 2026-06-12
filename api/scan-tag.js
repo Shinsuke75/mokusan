@@ -15,9 +15,11 @@ const OCR_PROMPT = [
   '  "lengthMm": 数値,',
   '  "priceYen": 数値,',
   '  "quantity": 数値,',
+  '  "taxIncluded": true or false,',
   '  "note": "補足"',
   "}",
-  "数値が不明な場合は0、数量が不明な場合は1。単位はmm/円で統一。"
+  "数値が不明な場合は0、数量が不明な場合は1。単位はmm/円で統一。",
+  "taxIncludedは、値札に「税込」「内税」「税込価格」「10%込」などの記載があればtrue、「税抜」「本体価格」「＋税」などの記載があればfalse、記載がなければfalse。"
 ].join("\n");
 
 const GEMINI_GENERATE_CONTENT_URL =
@@ -31,6 +33,7 @@ function normalizeResult(raw = {}) {
     lengthMm: safeNumber(raw.lengthMm),
     priceYen: safeNumber(raw.priceYen),
     quantity: Math.max(1, safeNumber(raw.quantity, 1)),
+    taxIncluded: raw.taxIncluded === true,
     note: String(raw.note || "").trim()
   };
 }
