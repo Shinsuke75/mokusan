@@ -310,17 +310,17 @@ async function loadPriceData() {
   }
 }
 
-// 樹種チップを描画（ユーザー追加分＋DEFAULT_LIST常時表示）
+// 樹種チップを描画（ユーザーが追加した寸法入力済み材料のみ）
 function renderListChips() {
   const seen = new Set();
-  const userSpecies = state.list
+  const species = state.list
     .filter((item) => item.volumeM3 > 0)
     .map((item) => item.species)
     .filter((s) => s && s !== "（未設定）" && !seen.has(s) && seen.add(s));
-  const defaultSpecies = DEFAULT_LIST.map((d) => d.species).filter((s) => !seen.has(s) && seen.add(s));
-  const species = [...userSpecies, ...defaultSpecies];
 
-  els.myPriceChips.classList.remove("hidden");
+  els.myPriceChips.classList.toggle("hidden", species.length === 0);
+  if (species.length === 0) return;
+
   els.myPriceChips.innerHTML = species.map((s) =>
     `<button type="button" class="chip" data-species="${s}">${s}</button>`
   ).join("");
