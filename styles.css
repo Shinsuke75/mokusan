@@ -109,7 +109,8 @@ input, select {
 .hint-text.avg-price { color: #6b7280; }
 
 /* 材料リスト */
-.list-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+.list-table-wrap { overflow-x: auto; margin-top: 8px; }
+.list-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .list-table th { text-align: left; padding: 6px 4px; background: #f3f4f6; border-bottom: 1px solid #e5e7eb; font-weight: 600; }
 .list-table td { padding: 6px 4px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
 .del-btn { cursor: pointer; border: 1px solid #fca5a5; border-radius: 4px; background: #fff; padding: 3px 8px; color: #dc2626; font-weight: 700; font-size: 13px; min-height: 32px; }
