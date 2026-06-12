@@ -10,6 +10,8 @@ const MM3_TO_M3_DIVISOR = 1_000_000_000;
 const GEOLOCATION_TIMEOUT_MS = 8000;
 const GEOLOCATION_MAX_AGE_MS = 60000;
 
+const DEFAULT_CHIPS = ["スギ（製材品）", "ヒノキ（製材品）", "2×4材（SPF）"];
+
 const DEFAULT_LIST = [
   { species: "スギ（製材品）",  unitPrice: 68200 },
   { species: "ヒノキ（製材品）", unitPrice: 85000 },
@@ -84,7 +86,7 @@ const els = {
   calcContent: getElement("calcContent"),
   listContent: getElement("listContent"),
   calcSpecies: getElement("calcSpecies"),
-  speciesList: getElement("speciesList"),
+  myPriceChips: getElement("myPriceChips"),
   calcUnitPrice: getElement("calcUnitPrice"),
   unitPriceSource: getElement("unitPriceSource"),
   calcWidth: getElement("calcWidth"),
@@ -253,7 +255,7 @@ async function addScanToList() {
     qty, unitPrice: Math.round(unitPrice), volumeM3, totalPrice: priceYen
   });
   localStorage.setItem("mokusan_list", JSON.stringify(state.list));
-  renderSpeciesDatalist();
+  renderListChips();
 
   // 価格表にも同時登録
   els.addScanToListButton.disabled = true;
@@ -310,17 +312,29 @@ async function loadPriceData() {
   }
 }
 
-// 樹種datalistを更新（デフォルト7種＋ユーザー追加分）
-function renderSpeciesDatalist() {
+// 樹種チップを描画（ユーザー追加：青 / デフォルト3種：グレー）
+function renderListChips() {
   const seen = new Set();
   const userSpecies = state.list
     .filter((item) => item.volumeM3 > 0)
     .map((item) => item.species)
     .filter((s) => s && s !== "（未設定）" && !seen.has(s) && seen.add(s));
-  const defaultSpecies = DEFAULT_LIST.map((d) => d.species).filter((s) => !seen.has(s) && seen.add(s));
-  els.speciesList.innerHTML = [...userSpecies, ...defaultSpecies]
-    .map((s) => `<option value="${s}">`)
-    .join("");
+  const defaultChips = DEFAULT_CHIPS.filter((s) => !seen.has(s));
+
+  const userHTML = userSpecies.map((s) =>
+    `<button type="button" class="chip" data-species="${s}">${s}</button>`
+  ).join("");
+  const defaultHTML = defaultChips.map((s) =>
+    `<button type="button" class="chip chip--default" data-species="${s}">${s}</button>`
+  ).join("");
+
+  els.myPriceChips.innerHTML = userHTML + defaultHTML;
+  els.myPriceChips.querySelectorAll(".chip, .chip--default").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      els.calcSpecies.value = btn.dataset.species;
+      onSpeciesChange();
+    });
+  });
 }
 
 // 樹種入力時にリストの最新単価・寸法を自動補完
@@ -408,7 +422,7 @@ function addToList() {
     qty, unitPrice, volumeM3, totalPrice
   });
   localStorage.setItem("mokusan_list", JSON.stringify(state.list));
-  renderSpeciesDatalist();
+  renderListChips();
   switchTab("list");
 }
 
@@ -416,7 +430,7 @@ function removeFromList(id) {
   state.list = state.list.filter((item) => String(item.id) !== String(id));
   localStorage.setItem("mokusan_list", JSON.stringify(state.list));
   renderList();
-  renderSpeciesDatalist();
+  renderListChips();
 }
 
 function clearList() {
@@ -424,7 +438,7 @@ function clearList() {
   state.list = [];
   localStorage.setItem("mokusan_list", JSON.stringify(state.list));
   renderList();
-  renderSpeciesDatalist();
+  renderListChips();
 }
 
 function resetToDefaults() {
@@ -432,7 +446,7 @@ function resetToDefaults() {
   state.list = makeDefaultEntries();
   localStorage.setItem("mokusan_list", JSON.stringify(state.list));
   renderList();
-  renderSpeciesDatalist();
+  renderListChips();
 }
 
 function formatListAsText() {
@@ -556,5 +570,5 @@ els.clearListButton.addEventListener("click", clearList);
   .forEach((input) => input.addEventListener("input", updateCalcResult));
 
 fillPrefectures();
-renderSpeciesDatalist();
+renderListChips();
 detectLocation();
