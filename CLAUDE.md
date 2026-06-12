@@ -43,7 +43,7 @@ Vercelにデプロイ済み: https://mokusan.vercel.app
    - Geminiが値札の税込/税抜表記を自動検出しチェック状態を設定
 3. 場所（任意）← 確認セクション下部に配置
    - 位置情報自動取得 or 手動入力（都道府県・市区町村のみ。店舗名は収集しない）
-4. 「みんなの記録に共有する」チェックボックス（デフォルトON）
+4. 「みんなの記録に共有する」チェックボックス（**デフォルトOFF**）
 5. 「＋ リストに追加」ボタン1つで：
    - 材料リスト（localStorage）に追加（qty=1で保存）
    - チェックON時のみGoogle Sheetsへ同時記録
@@ -65,11 +65,12 @@ Vercelにデプロイ済み: https://mokusan.vercel.app
 
 ## セキュリティ対策（実装済み）
 
-- **レート制限**: scan-tag 10req/min、append-sheet 20req/min、geocode 30req/min（IPベース・インメモリ）
-- **オリジン検証**: mokusan.vercel.app 以外からのAPIアクセスを拒否
+- **レート制限**: scan-tag 10req/min、append-sheet 20req/min、geocode 30req/min、get-prices 60req/min（IPベース・インメモリ）
+- **オリジン検証**: mokusan.vercel.app 以外からのAPIアクセスを拒否（全エンドポイント共通）
 - **入力サニタイズ**: append-sheet でHTMLタグ除去・文字数制限・数値バリデーション
 - **XSS対策**: みんなの記録の表示時にescapeHtmlを適用
-- **プライバシー**: 位置情報共有は任意（チェックボックス）・プライバシーポリシーページあり
+- **座標バリデーション**: reverse-geocode で lat/lon を parseFloat + 範囲チェック（lat:±90、lon:±180）
+- **プライバシー**: 位置情報共有は任意（チェックボックス・デフォルトOFF）・プライバシーポリシーページあり・同意ラベルにポリシーリンク設置
 
 ## デフォルト参照単価（DEFAULT_LIST）
 
@@ -137,6 +138,22 @@ npm run dev   # vercel dev → http://localhost:3000
 
 - `main`: 本番（Vercelが自動デプロイ）
 - `claude/mokusan-app-dev-wp3bir`: 開発用ブランチ
+
+---
+
+## 変更履歴
+
+### 2026-06-12 — セキュリティ・プライバシー修正（優先度高5件）
+
+**背景**: コードレビューで発見された下記の問題を修正。
+
+| ファイル | 変更内容 |
+|----------|----------|
+| `api/get-prices.js` | `checkRateLimit` / `getClientIp` を追加インポートし、60req/min のレート制限を追加（未設定だった） |
+| `api/reverse-geocode.js` | `isAllowedOrigin` を追加インポートし、originチェックを追加（他エンドポイントと同等の保護に統一） |
+| `api/reverse-geocode.js` | `lat`/`lon` クエリパラメータを `parseFloat` で数値変換 + 範囲外（lat>90等）は400エラーで拒否 |
+| `index.html` | 共有チェックボックスの `checked` 属性を削除 → デフォルトOFF（プライバシーのオプトイン原則） |
+| `index.html` | 共有同意ラベルにプライバシーポリシーへのインラインリンクを追加 |
 
 ---
 
