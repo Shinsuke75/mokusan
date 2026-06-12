@@ -101,6 +101,7 @@ const els = {
   listTotal: getElement("listTotal"),
   totalVolume: getElement("totalVolume"),
   totalPrice: getElement("totalPrice"),
+  shareButton: getElement("shareButton"),
   resetListButton: getElement("resetListButton"),
   clearListButton: getElement("clearListButton")
 };
@@ -434,12 +435,45 @@ function resetToDefaults() {
   renderListChips();
 }
 
+function formatListAsText() {
+  const realItems = state.list.filter((item) => item.volumeM3 > 0);
+  const date = new Date().toLocaleDateString("ja-JP");
+  const lines = [`【簡易見積もり】${date}`, ""];
+  realItems.forEach((item) => {
+    lines.push(item.species);
+    lines.push(`  ${item.widthMm}×${item.heightMm}×${item.lengthMm}mm × ${item.qty}本`);
+    lines.push(`  単価 ${item.unitPrice.toLocaleString("ja-JP")}円/m³ → ${item.totalPrice.toLocaleString("ja-JP")}円`);
+    lines.push("");
+  });
+  const totalVol = realItems.reduce((s, i) => s + i.volumeM3, 0);
+  const totalPri = realItems.reduce((s, i) => s + i.totalPrice, 0);
+  lines.push("─────────────────");
+  lines.push(`合計体積: ${totalVol.toFixed(4)} m³`);
+  lines.push(`合計金額: ${totalPri.toLocaleString("ja-JP")} 円`);
+  return lines.join("\n");
+}
+
+async function exportList() {
+  const text = formatListAsText();
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: "簡易見積もり", text });
+    } catch (e) {
+      if (e.name !== "AbortError") console.warn("共有に失敗:", e.message);
+    }
+  } else {
+    await navigator.clipboard.writeText(text);
+    alert("クリップボードにコピーしました。");
+  }
+}
+
 function renderList() {
   const { list } = state;
   if (list.length === 0) {
     els.listEmpty.classList.remove("hidden");
     els.listTable.innerHTML = "";
     els.listTotal.classList.add("hidden");
+    els.shareButton.classList.add("hidden");
     els.resetListButton.classList.add("hidden");
     els.clearListButton.classList.add("hidden");
     return;
@@ -457,8 +491,10 @@ function renderList() {
     els.totalVolume.textContent = totalVol.toFixed(4);
     els.totalPrice.textContent = totalPri.toLocaleString("ja-JP");
     els.listTotal.classList.remove("hidden");
+    els.shareButton.classList.remove("hidden");
   } else {
     els.listTotal.classList.add("hidden");
+    els.shareButton.classList.add("hidden");
   }
 
   const rows = list.map((item) => {
@@ -512,6 +548,7 @@ els.tabList.addEventListener("click", () => switchTab("list"));
 
 els.calcSpecies.addEventListener("input", onSpeciesChange);
 els.addToListButton.addEventListener("click", addToList);
+els.shareButton.addEventListener("click", exportList);
 els.resetListButton.addEventListener("click", resetToDefaults);
 els.clearListButton.addEventListener("click", clearList);
 
