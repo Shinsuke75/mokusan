@@ -74,9 +74,11 @@ const els = {
   widthMm: getElement("widthMm"),
   heightMm: getElement("heightMm"),
   lengthMm: getElement("lengthMm"),
+  taxIncluded: getElement("taxIncluded"),
   note: getElement("note"),
   volumeText: getElement("volumeText"),
   unitPriceText: getElement("unitPriceText"),
+  unitPriceLabel: getElement("unitPriceLabel"),
   shareConsent: getElement("shareConsent"),
   addScanToListButton: getElement("addScanToListButton"),
   submitStatus: getElement("submitStatus"),
@@ -186,11 +188,13 @@ function calcVolumeAndUnitPrice() {
   const width = toNumber(els.widthMm.value);
   const height = toNumber(els.heightMm.value);
   const length = toNumber(els.lengthMm.value);
-  const price = toNumber(els.priceYen.value);
+  const rawPrice = toNumber(els.priceYen.value);
+  const price = els.taxIncluded.checked ? rawPrice / 1.1 : rawPrice;
   const volumeM3 = (width * height * length) / MM3_TO_M3_DIVISOR;
   const unitPrice = volumeM3 > 0 ? price / volumeM3 : 0;
   els.volumeText.textContent = volumeM3 > 0 ? volumeM3.toFixed(6) : "-";
   els.unitPriceText.textContent = volumeM3 > 0 ? Math.round(unitPrice).toLocaleString("ja-JP") : "-";
+  els.unitPriceLabel.textContent = els.taxIncluded.checked ? "立米単価（税抜換算）" : "立米単価";
   return { volumeM3, unitPrice };
 }
 
@@ -248,7 +252,8 @@ async function addScanToList() {
   const width = toNumber(els.widthMm.value);
   const height = toNumber(els.heightMm.value);
   const length = toNumber(els.lengthMm.value);
-  const priceYen = toNumber(els.priceYen.value);
+  const rawPriceYen = toNumber(els.priceYen.value);
+  const priceYen = els.taxIncluded.checked ? rawPriceYen / 1.1 : rawPriceYen;
 
   if (!width || !height || !length) { alert("寸法を確認してください。"); return; }
 
@@ -279,7 +284,7 @@ async function addScanToList() {
       storeName: els.storeName.value || "",
       species: els.species.value || "",
       widthMm: width, heightMm: height, lengthMm: length,
-      priceYen, quantity: 1,
+      priceYen: rawPriceYen, quantity: 1,
       unitPriceYenPerM3: Math.round(unitPrice),
       note: els.note.value || ""
     };
@@ -568,6 +573,7 @@ function renderList() {
 
 [els.widthMm, els.heightMm, els.lengthMm, els.priceYen]
   .forEach((input) => input.addEventListener("input", calcVolumeAndUnitPrice));
+els.taxIncluded.addEventListener("change", calcVolumeAndUnitPrice);
 
 els.cameraButton.addEventListener("click", () => els.cameraInput.click());
 els.galleryButton.addEventListener("click", () => els.galleryInput.click());
@@ -592,3 +598,7 @@ els.clearListButton.addEventListener("click", clearList);
 fillPrefectures();
 renderListChips();
 detectLocation();
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js").catch(() => {});
+}

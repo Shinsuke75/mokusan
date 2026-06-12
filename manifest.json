@@ -1,0 +1,18 @@
+{
+  "name": "mokusan - 木材積算計算機",
+  "short_name": "mokusan",
+  "description": "木材値札をスキャンして立米単価を記録・積算します",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f7fb",
+  "theme_color": "#2563eb",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

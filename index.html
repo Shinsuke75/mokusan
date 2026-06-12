@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>mokusan - 木材積算アプリ</title>
     <link rel="stylesheet" href="/styles.css" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#2563eb" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="mokusan" />
+    <link rel="apple-touch-icon" href="/icon.svg" />
   </head>
   <body>
     <main class="container">
@@ -40,7 +46,13 @@
         <h2>抽出結果の確認・修正</h2>
         <div class="grid2">
           <label>樹種<input id="species" /></label>
-          <label>価格(円)<input id="priceYen" type="number" min="0" /></label>
+          <label>
+            価格(円)
+            <div class="price-row">
+              <input id="priceYen" type="number" min="0" />
+              <label class="tax-chk"><input type="checkbox" id="taxIncluded" />税込</label>
+            </div>
+          </label>
           <label>幅(mm)<input id="widthMm" type="number" min="0" /></label>
           <label>厚み(mm)<input id="heightMm" type="number" min="0" /></label>
           <label>長さ(mm)<input id="lengthMm" type="number" min="0" /></label>
@@ -48,7 +60,7 @@
         </div>
         <div class="resultBox">
           <p>体積: <span id="volumeText">-</span> m³</p>
-          <p>立米単価: <span id="unitPriceText">-</span> 円/m³</p>
+          <p><span id="unitPriceLabel">立米単価</span>: <span id="unitPriceText">-</span> 円/m³</p>
         </div>
         <div class="meta-section">
           <p class="meta-label">場所・店舗（任意）</p>
