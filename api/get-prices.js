@@ -1,4 +1,5 @@
 import { google } from "googleapis";
+import { isAllowedOrigin } from "./_ratelimit.js";
 
 function getSheetsClient() {
   const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
@@ -14,6 +15,7 @@ function getSheetsClient() {
 
 export default async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).json({ error: "Method Not Allowed" });
+  if (!isAllowedOrigin(req)) return res.status(403).json({ error: "Forbidden" });
 
   try {
     const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID;

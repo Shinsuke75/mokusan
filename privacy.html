@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>プライバシーポリシー - mokusan</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <style>
+      .privacy-body { max-width: 680px; margin: 0 auto; padding: 24px 16px 48px; }
+      h1 { font-size: 1.3rem; margin-bottom: 4px; }
+      h2 { font-size: 1rem; margin: 24px 0 8px; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; }
+      p, li { font-size: 14px; line-height: 1.7; color: #374151; }
+      ul { padding-left: 20px; margin: 0; }
+      .updated { font-size: 12px; color: #9ca3af; margin-bottom: 24px; }
+      a { color: #2563eb; }
+    </style>
+  </head>
+  <body>
+    <div class="privacy-body">
+      <h1>プライバシーポリシー</h1>
+      <p class="updated">最終更新: 2025年6月</p>
+
+      <p>mokusan（以下「本アプリ」）は、木材積算の補助ツールです。本ポリシーでは、本アプリが収集・利用するデータについて説明します。</p>
+
+      <h2>1. 収集するデータと目的</h2>
+      <ul>
+        <li><strong>値札画像：</strong> Gemini AI（Google）によるOCR（文字認識）のみに使用します。サーバーへの送信後、解析結果を返却した時点で画像データは保持しません。</li>
+        <li><strong>位置情報（緯度・経度）：</strong> 端末のGPS情報を取得し、Nominatim（OpenStreetMap）を通じて都道府県・市区町村に変換します。詳細な位置（緯度・経度）はサーバーに保存しません。</li>
+        <li><strong>価格データ（任意共有）：</strong> 「みんなの記録に共有する」にチェックを入れた場合、樹種・寸法・価格・都道府県・市区町村・店舗名（任意入力）をGoogle Sheetsに記録します。このデータは本アプリの全ユーザーが「みんなの記録」として閲覧できます。</li>
+        <li><strong>材料リスト：</strong> 端末内のlocalStorageに保存します。外部に送信されません。</li>
+      </ul>
+
+      <h2>2. データの共有・第三者提供</h2>
+      <ul>
+        <li>価格データはGoogle Sheets（Google LLC）に保存されます。</li>
+        <li>画像OCRにはGemini API（Google LLC）を使用します。</li>
+        <li>逆ジオコーディングにはNominatim（OpenStreetMap Foundation）を使用します。</li>
+        <li>上記以外の第三者にデータを提供・販売することはありません。</li>
+      </ul>
+
+      <h2>3. 個人情報の取り扱い</h2>
+      <p>本アプリは氏名・メールアドレス等の個人を直接識別する情報は収集しません。「みんなの記録」に共有される店舗名・地域情報は匿名情報として扱いますが、投稿内容には個人を特定し得る情報を含めないようご注意ください。</p>
+
+      <h2>4. データの保存期間</h2>
+      <p>Google Sheetsに記録した価格データは、サービス運営上必要な期間保存します。削除を希望される場合は下記連絡先までお問い合わせください。</p>
+
+      <h2>5. お問い合わせ</h2>
+      <p>本ポリシーに関するご質問・データ削除のご依頼は、GitHubリポジトリのIssueにてお問い合わせください。</p>
+
+      <p style="margin-top:32px;"><a href="/">← アプリに戻る</a></p>
+    </div>
+  </body>
+</html>
