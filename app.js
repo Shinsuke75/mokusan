@@ -292,7 +292,7 @@ function switchTab(tab) {
   els.scanContent.classList.toggle("hidden", tab !== "scan");
   els.calcContent.classList.toggle("hidden", tab !== "calc");
   els.listContent.classList.toggle("hidden", tab !== "list");
-  if (tab === "calc") loadPriceData();
+  if (tab === "calc") { loadPriceData(); renderListChips(); }
   if (tab === "list") renderList();
 }
 
