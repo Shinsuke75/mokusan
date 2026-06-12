@@ -230,6 +230,14 @@ async function addScanToList() {
   });
   localStorage.setItem("mokusan_list", JSON.stringify(state.list));
 
+  // スキャンした樹種・単価をマイ単価に自動保存（計算タブのチップに反映）
+  const species = els.species.value.trim();
+  if (species && unitPrice > 0) {
+    state.myPrices[species] = Math.round(unitPrice);
+    localStorage.setItem("mokusan_my_prices", JSON.stringify(state.myPrices));
+    renderMyPriceChips();
+  }
+
   // みんなの価格表にも同時登録
   els.addScanToListButton.disabled = true;
   els.submitStatus.textContent = "登録中...";
