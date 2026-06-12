@@ -20,49 +20,24 @@
       <!-- ===== スキャンタブ ===== -->
       <div id="scanContent">
       <section class="card">
-        <h2>1. 位置情報</h2>
-        <div id="geoStatus">位置情報を取得中...</div>
-        <div id="locationAuto" class="hidden">
-          <p><strong>都道府県:</strong> <span id="prefectureText"></span></p>
-          <p><strong>市区町村:</strong> <span id="cityText"></span></p>
-        </div>
-        <div id="locationManual" class="hidden grid2">
-          <label>
-            都道府県
-            <select id="manualPrefecture"></select>
-          </label>
-          <label>
-            市区町村
-            <input id="manualCity" placeholder="例: 新宿区" />
-          </label>
-        </div>
-      </section>
-
-      <section class="card">
-        <h2>2. 画像を読み込む</h2>
-        <div class="grid2">
-          <div>
-            <span class="field-label">値札画像</span>
-            <div class="photo-select">
-              <button type="button" id="cameraButton" class="photo-btn">📷 カメラで撮影</button>
-              <button type="button" id="galleryButton" class="photo-btn">🖼 写真を選ぶ</button>
-            </div>
-            <img id="photoPreview" class="photo-preview hidden" alt="選択した画像" />
-            <div id="photoName" class="photo-name hidden"></div>
-            <input id="cameraInput" type="file" accept="image/*" capture="environment" class="hidden" />
-            <input id="galleryInput" type="file" accept="image/*" class="hidden" />
+        <h2>画像を読み込む</h2>
+        <div>
+          <span class="field-label">値札画像</span>
+          <div class="photo-select">
+            <button type="button" id="cameraButton" class="photo-btn">📷 カメラで撮影</button>
+            <button type="button" id="galleryButton" class="photo-btn">🖼 写真を選ぶ</button>
           </div>
-          <label>
-            店舗名（任意）
-            <input id="storeName" placeholder="例: ○○ホームセンター" />
-          </label>
+          <img id="photoPreview" class="photo-preview hidden" alt="選択した画像" />
+          <div id="photoName" class="photo-name hidden"></div>
+          <input id="cameraInput" type="file" accept="image/*" capture="environment" class="hidden" />
+          <input id="galleryInput" type="file" accept="image/*" class="hidden" />
         </div>
         <button id="scanButton" type="button" class="primary">Geminiで解析</button>
         <div id="scanStatus" class="status"></div>
       </section>
 
       <section class="card hidden" id="confirmSection">
-        <h2>3. 抽出結果の確認・修正</h2>
+        <h2>抽出結果の確認・修正</h2>
         <div class="grid2">
           <label>樹種<input id="species" /></label>
           <label>価格(円)<input id="priceYen" type="number" min="0" /></label>
@@ -75,6 +50,25 @@
         <div class="resultBox">
           <p>体積: <span id="volumeText">-</span> m³</p>
           <p>立米単価: <span id="unitPriceText">-</span> 円/m³</p>
+        </div>
+        <div class="meta-section">
+          <p class="meta-label">場所・店舗（任意）</p>
+          <div id="geoStatus" class="status"></div>
+          <div id="locationAuto" class="hidden">
+            <p><strong>都道府県:</strong> <span id="prefectureText"></span></p>
+            <p><strong>市区町村:</strong> <span id="cityText"></span></p>
+          </div>
+          <div id="locationManual" class="hidden grid2">
+            <label>
+              都道府県
+              <select id="manualPrefecture"></select>
+            </label>
+            <label>
+              市区町村
+              <input id="manualCity" placeholder="例: 新宿区" />
+            </label>
+          </div>
+          <label>店舗名<input id="storeName" placeholder="例: ○○ホームセンター" /></label>
         </div>
         <button id="addScanToListButton" type="button" class="primary">＋ リストに追加（価格表にも記録）</button>
         <div id="submitStatus" class="status"></div>
