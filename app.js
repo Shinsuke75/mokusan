@@ -22,6 +22,18 @@ const DEFAULT_LIST = [
   { species: "ウォルナット",   unitPrice: 1100000 },
 ];
 
+function makeDefaultEntries() {
+  return DEFAULT_LIST
+    .filter((d) => DEFAULT_CHIPS.includes(d.species))
+    .map((d, i) => ({
+      id: `default_${i}`,
+      species: d.species,
+      unitPrice: d.unitPrice,
+      isDefault: true,
+      widthMm: 0, heightMm: 0, lengthMm: 0,
+      qty: 0, volumeM3: 0, totalPrice: 0
+    }));
+}
 
 const state = {
   imageBase64: "",
@@ -30,7 +42,11 @@ const state = {
   selectedFile: null,
   priceData: { recent: [] },
   priceDataLoaded: false,
-  list: JSON.parse(localStorage.getItem("mokusan_list") || "[]")
+  list: (() => {
+    const saved = localStorage.getItem("mokusan_list");
+    if (saved !== null) return JSON.parse(saved);
+    return makeDefaultEntries();
+  })()
 };
 
 const getElement = (id) => document.getElementById(id);
@@ -90,6 +106,7 @@ const els = {
   totalVolume: getElement("totalVolume"),
   totalPrice: getElement("totalPrice"),
   shareButton: getElement("shareButton"),
+  resetListButton: getElement("resetListButton"),
   clearListButton: getElement("clearListButton")
 };
 
@@ -418,6 +435,14 @@ function removeFromList(id) {
   renderListChips();
 }
 
+function resetToDefaults() {
+  if (!confirm("リストを初期値に戻しますか？\n追加した項目はすべて削除されます。")) return;
+  state.list = makeDefaultEntries();
+  localStorage.setItem("mokusan_list", JSON.stringify(state.list));
+  renderList();
+  renderListChips();
+}
+
 function clearList() {
   if (!confirm("リストをすべて削除しますか？")) return;
   state.list = [];
@@ -466,11 +491,13 @@ function renderList() {
     els.listTable.innerHTML = "";
     els.listTotal.classList.add("hidden");
     els.shareButton.classList.add("hidden");
+    els.resetListButton.classList.remove("hidden");
     els.clearListButton.classList.add("hidden");
     return;
   }
 
   els.listEmpty.classList.add("hidden");
+  els.resetListButton.classList.remove("hidden");
   els.clearListButton.classList.remove("hidden");
 
   // 合計は実際の材料（寸法入力済み）のみ集計
@@ -539,6 +566,7 @@ els.tabList.addEventListener("click", () => switchTab("list"));
 els.calcSpecies.addEventListener("input", onSpeciesChange);
 els.addToListButton.addEventListener("click", addToList);
 els.shareButton.addEventListener("click", exportList);
+els.resetListButton.addEventListener("click", resetToDefaults);
 els.clearListButton.addEventListener("click", clearList);
 
 [els.calcUnitPrice, els.calcWidth, els.calcHeight, els.calcLength, els.calcQty]
