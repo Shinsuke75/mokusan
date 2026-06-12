@@ -51,6 +51,7 @@ const els = {
   volumeText: getElement("volumeText"),
   unitPriceText: getElement("unitPriceText"),
   submitButton: getElement("submitButton"),
+  addScanToListButton: getElement("addScanToListButton"),
   submitStatus: getElement("submitStatus"),
   doneSection: getElement("doneSection"),
   tabScan: getElement("tabScan"),
@@ -206,6 +207,33 @@ function currentLocation() {
     return { prefecture: els.manualPrefecture.value, city: els.manualCity.value, source: "manual" };
   }
   return state.location;
+}
+
+function addScanToList() {
+  const width = toNumber(els.widthMm.value);
+  const height = toNumber(els.heightMm.value);
+  const length = toNumber(els.lengthMm.value);
+  const qty = Math.max(1, toNumber(els.quantity.value, 1));
+  const priceYen = toNumber(els.priceYen.value);
+
+  if (!width || !height || !length) { alert("寸法を確認してください。"); return; }
+
+  const volumeM3 = (width * height * length * qty) / MM3_TO_M3_DIVISOR;
+  const unitPrice = volumeM3 > 0 ? priceYen / volumeM3 : 0;
+
+  state.list.push({
+    id: Date.now(),
+    species: els.species.value || "（未設定）",
+    widthMm: width,
+    heightMm: height,
+    lengthMm: length,
+    qty,
+    unitPrice: Math.round(unitPrice),
+    volumeM3,
+    totalPrice: priceYen
+  });
+  localStorage.setItem("mokusan_list", JSON.stringify(state.list));
+  switchTab("list");
 }
 
 async function submitRecord() {
@@ -457,6 +485,7 @@ els.cameraInput.addEventListener("change", () => { const f = els.cameraInput.fil
 els.galleryInput.addEventListener("change", () => { const f = els.galleryInput.files?.[0]; if (f) onFileSelected(f); });
 els.scanButton.addEventListener("click", runScan);
 els.submitButton.addEventListener("click", submitRecord);
+els.addScanToListButton.addEventListener("click", addScanToList);
 
 els.tabScan.addEventListener("click", () => switchTab("scan"));
 els.tabCalc.addEventListener("click", () => switchTab("calc"));
