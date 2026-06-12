@@ -10,19 +10,24 @@ Vercelにデプロイ済み: https://mokusan.vercel.app
 ```
 .
 ├─ api/
-│  ├─ scan-tag.js        # Gemini APIで画像OCR → JSON返却
+│  ├─ _ratelimit.js      # IPベースのレート制限ヘルパー＋オリジン検証
+│  ├─ scan-tag.js        # Gemini APIで画像OCR → JSON返却（税込/税抜も検出）
 │  ├─ reverse-geocode.js # Nominatimで緯度経度 → 都道府県・市区町村
-│  ├─ append-sheet.js    # Google Sheetsに1行追記
+│  ├─ append-sheet.js    # Google Sheetsに1行追記（入力サニタイズ済み）
 │  └─ get-prices.js      # Google Sheetsから価格データ取得（recent + averages）
 ├─ app.js                # フロントエンドロジック（ES modules）
 ├─ index.html            # メイン画面（スキャン・計算・リスト タブ）
+├─ privacy.html          # プライバシーポリシーページ
 ├─ styles.css            # モバイル向けスタイル
+├─ manifest.json         # PWAマニフェスト
+├─ sw.js                 # Service Worker（HTMLネットワーク優先・JS/CSSキャッシュ優先）
+├─ icon.svg              # アプリアイコン（木 on 青背景）
 └─ package.json          # dependencies: googleapis
 ```
 
 ## 技術スタック
 
-- **フロントエンド**: バニラJS（ES modules）、モバイルファースト
+- **フロントエンド**: バニラJS（ES modules）、モバイルファースト、PWA対応
 - **バックエンド**: Vercel Serverless Functions（Node.js）
 - **OCR**: Gemini 2.5 Flash API（`v1beta`エンドポイント）
 - **位置情報**: Geolocation API + Nominatim逆ジオコーディング
@@ -33,28 +38,38 @@ Vercelにデプロイ済み: https://mokusan.vercel.app
 
 ### 📷 スキャンタブ
 1. 値札画像読み取り（カメラ/ギャラリー選択 → Geminiで解析）
-2. 抽出結果確認・修正（樹種・価格・幅・厚み・長さ・本数・備考）
-   - 体積・立米単価をリアルタイム算出
+2. 抽出結果確認・修正（樹種・価格・税込チェック・幅・厚み・長さ・備考）
+   - 体積・立米単価をリアルタイム算出（税込チェック時は÷1.1して税抜換算）
+   - Geminiが値札の税込/税抜表記を自動検出しチェック状態を設定
 3. 場所（任意）← 確認セクション下部に配置
-   - 位置情報自動取得 or 手動入力
-4. 「＋ リストに追加」ボタン1つで（同意チェック時は価格表にも記録）：
-   - 材料リスト（localStorage）に追加
-   - Google Sheetsへ同時記録
+   - 位置情報自動取得 or 手動入力（都道府県・市区町村のみ。店舗名は収集しない）
+4. 「みんなの記録に共有する」チェックボックス（デフォルトON）
+5. 「＋ リストに追加」ボタン1つで：
+   - 材料リスト（localStorage）に追加（qty=1で保存）
+   - チェックON時のみGoogle Sheetsへ同時記録
 
 ### 📊 計算タブ
-- 樹種チップ（スキャン・追加済み材料の樹種から生成）
+- 樹種チップ（ユーザー追加：青 / デフォルト3種：グレー）
   - タップで樹種・単価・寸法を自動入力
 - 立米単価 × 体積 → 金額をリアルタイム算出
 - 「＋ リストに追加」ボタン
 - みんなの記録（Google Sheetsの最新20件）
 
 ### 📋 リストタブ
-- 追加した材料の一覧（樹種・寸法・本数・単価・体積・金額）
+- 追加した材料をカード形式で表示（樹種・寸法・単価・本数±ボタン・金額・×削除）
+- 本数±ボタンで本数変更 → 体積・金額・合計をリアルタイム更新
 - 合計体積・合計金額（寸法入力済み材料のみ集計）
 - 「共有」ボタン → 簡易見積もりテキストをネイティブ共有（メール・LINE等）
-- 「初期値に戻す」ボタン → デフォルト参照単価7種に戻す
+- 「初期値に戻す」ボタン → デフォルト参照単価3種に戻す
 - 「リストをすべて削除」ボタン
-- 各行の「×」で個別削除
+
+## セキュリティ対策（実装済み）
+
+- **レート制限**: scan-tag 10req/min、append-sheet 20req/min、geocode 30req/min（IPベース・インメモリ）
+- **オリジン検証**: mokusan.vercel.app 以外からのAPIアクセスを拒否
+- **入力サニタイズ**: append-sheet でHTMLタグ除去・文字数制限・数値バリデーション
+- **XSS対策**: みんなの記録の表示時にescapeHtmlを適用
+- **プライバシー**: 位置情報共有は任意（チェックボックス）・プライバシーポリシーページあり
 
 ## デフォルト参照単価（DEFAULT_LIST）
 
@@ -72,6 +87,8 @@ Vercelにデプロイ済み: https://mokusan.vercel.app
 | タモ | 790,000 |
 | ウォルナット | 1,100,000 |
 
+DEFAULT_CHIPS（計算タブのグレーチップ）: スギ・ヒノキ・2×4材の3種のみ
+
 ## localStorage
 
 | キー | 内容 |
@@ -83,14 +100,14 @@ Vercelにデプロイ済み: https://mokusan.vercel.app
 {
   id: number | string,   // Date.now() or "default_N"
   species: string,
-  unitPrice: number,
+  unitPrice: number,     // 税抜単価（円/m³）
   isDefault: boolean,    // デフォルト参照エントリのみ true
   widthMm: number,
   heightMm: number,
   lengthMm: number,
-  qty: number,
-  volumeM3: number,      // 0 = 参照エントリ
-  totalPrice: number
+  qty: number,           // 本数（±ボタンで変更可）
+  volumeM3: number,      // qty × 1本の体積。0 = 参照エントリ
+  totalPrice: number     // unitPrice × volumeM3（税抜）
 }
 ```
 
@@ -107,7 +124,7 @@ Vercelにデプロイ済み: https://mokusan.vercel.app
 
 ## Sheetsのカラム順
 
-A:日付, B:都道府県, C:市区町村, D:（空欄）, E:樹種, F:幅(mm), G:高さ(mm), H:長さ(mm), I:価格(円), J:本数, K:立米単価(円/m³), L:備考
+A:日付, B:都道府県, C:市区町村, D:（空欄）, E:樹種, F:幅(mm), G:高さ(mm), H:長さ(mm), I:価格(円・タグ表示値）, J:本数, K:立米単価(円/m³・税抜), L:備考
 
 ## ローカル開発
 
@@ -120,3 +137,14 @@ npm run dev   # vercel dev → http://localhost:3000
 
 - `main`: 本番（Vercelが自動デプロイ）
 - `claude/mokusan-app-dev-wp3bir`: 開発用ブランチ
+
+---
+
+## 今後の実装候補（優先度順）
+
+### 優先度：中
+1. **「みんなの記録」フィルタ** — 樹種・都道府県での絞り込み
+2. **OCRプロンプト改善** — 寸法単位（cm・m）の自動mm変換、価格の税込/税抜判定精度向上
+
+### 優先度：低
+3. **オフライン手動入力モード** — 電波がない場所で後からOCRできるよう画像をlocalStorageに保存
