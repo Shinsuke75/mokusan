@@ -50,7 +50,10 @@
             価格(円)
             <div class="price-row">
               <input id="priceYen" type="number" min="0" />
-              <label class="tax-chk"><input type="checkbox" id="taxIncluded" />税込</label>
+              <div class="tax-toggle">
+                <button type="button" class="tax-btn active" id="taxExclusive">税抜</button>
+                <button type="button" class="tax-btn" id="taxInclusive">税込</button>
+              </div>
             </div>
           </label>
           <label>幅(mm)<input id="widthMm" type="number" min="0" /></label>
