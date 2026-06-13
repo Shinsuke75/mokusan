@@ -232,7 +232,7 @@ async function runScan() {
     els.note.value = data.note || "";
     calcVolumeAndUnitPrice();
     els.confirmSection.classList.remove("hidden");
-    els.confirmSection.scrollIntoView({ behavior: "smooth" });
+    setTimeout(() => els.confirmSection.scrollIntoView({ behavior: "smooth" }), 50);
     els.scanStatus.textContent = "抽出結果を確認して追加してください。";
   } catch (e) {
     els.scanStatus.textContent = `エラー: ${e.message}`;
@@ -401,6 +401,7 @@ function renderRecentTable() {
   }
   const rows = recent.map((r) => `
     <tr>
+      <td>${escapeHtml(r.date ? r.date.slice(0, 10) : "-")}</td>
       <td>${escapeHtml(r.species || "-")}</td>
       <td>${r.unitPrice.toLocaleString("ja-JP")}</td>
       <td>${escapeHtml(r.prefecture || "-")}</td>
@@ -408,7 +409,7 @@ function renderRecentTable() {
   `).join("");
   els.recentTable.innerHTML = `
     <table class="recent-table">
-      <thead><tr><th>樹種</th><th>単価(円/m³)</th><th>地域</th></tr></thead>
+      <thead><tr><th>日付</th><th>樹種</th><th>単価(円/m³)</th><th>地域</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
   `;
