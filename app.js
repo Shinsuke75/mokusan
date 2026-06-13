@@ -74,7 +74,8 @@ const els = {
   widthMm: getElement("widthMm"),
   heightMm: getElement("heightMm"),
   lengthMm: getElement("lengthMm"),
-  taxIncluded: getElement("taxIncluded"),
+  taxExclusive: getElement("taxExclusive"),
+  taxInclusive: getElement("taxInclusive"),
   note: getElement("note"),
   volumeText: getElement("volumeText"),
   unitPriceText: getElement("unitPriceText"),
@@ -192,12 +193,13 @@ function calcVolumeAndUnitPrice() {
   const height = toNumber(els.heightMm.value);
   const length = toNumber(els.lengthMm.value);
   const rawPrice = toNumber(els.priceYen.value);
-  const price = els.taxIncluded.checked ? rawPrice / 1.1 : rawPrice;
+  const taxIncluded = els.taxInclusive.classList.contains("active");
+  const price = taxIncluded ? rawPrice / 1.1 : rawPrice;
   const volumeM3 = (width * height * length) / MM3_TO_M3_DIVISOR;
   const unitPrice = volumeM3 > 0 ? price / volumeM3 : 0;
   els.volumeText.textContent = volumeM3 > 0 ? volumeM3.toFixed(6) : "-";
   els.unitPriceText.textContent = volumeM3 > 0 ? Math.round(unitPrice).toLocaleString("ja-JP") : "-";
-  els.unitPriceLabel.textContent = els.taxIncluded.checked ? "立米単価（税抜換算）" : "立米単価";
+  els.unitPriceLabel.textContent = taxIncluded ? "立米単価（税抜換算）" : "立米単価";
   return { volumeM3, unitPrice };
 }
 
@@ -232,7 +234,9 @@ async function runScan() {
     els.heightMm.value = data.heightMm || "";
     els.lengthMm.value = data.lengthMm || "";
     els.priceYen.value = data.priceYen || "";
-    els.taxIncluded.checked = data.taxIncluded || false;
+    const isTaxInc = data.taxIncluded || false;
+    els.taxExclusive.classList.toggle("active", !isTaxInc);
+    els.taxInclusive.classList.toggle("active", isTaxInc);
     els.note.value = data.note || "";
     calcVolumeAndUnitPrice();
     els.confirmSection.classList.remove("hidden");
@@ -261,7 +265,7 @@ async function addScanToList() {
   const height = toNumber(els.heightMm.value);
   const length = toNumber(els.lengthMm.value);
   const rawPriceYen = toNumber(els.priceYen.value);
-  const priceYen = els.taxIncluded.checked ? rawPriceYen / 1.1 : rawPriceYen;
+  const priceYen = els.taxInclusive.classList.contains("active") ? rawPriceYen / 1.1 : rawPriceYen;
 
   if (!width || !height || !length) { alert("寸法を確認してください。"); return; }
 
@@ -609,7 +613,13 @@ function renderList() {
 
 [els.widthMm, els.heightMm, els.lengthMm, els.priceYen]
   .forEach((input) => input.addEventListener("input", calcVolumeAndUnitPrice));
-els.taxIncluded.addEventListener("change", calcVolumeAndUnitPrice);
+[els.taxExclusive, els.taxInclusive].forEach((btn) => {
+  btn.addEventListener("click", () => {
+    els.taxExclusive.classList.toggle("active", btn === els.taxExclusive);
+    els.taxInclusive.classList.toggle("active", btn === els.taxInclusive);
+    calcVolumeAndUnitPrice();
+  });
+});
 
 els.cameraButton.addEventListener("click", () => els.cameraInput.click());
 els.galleryButton.addEventListener("click", () => els.galleryInput.click());
