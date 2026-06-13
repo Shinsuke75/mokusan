@@ -483,7 +483,7 @@ function clearList() {
 function formatListAsText() {
   const realItems = state.list.filter((item) => item.volumeM3 > 0);
   const date = new Date().toLocaleDateString("ja-JP");
-  const lines = [`【簡易見積もり】${date}`, ""];
+  const lines = [`【木材リスト】${date}`, ""];
   realItems.forEach((item) => {
     lines.push(item.species);
     lines.push(`  ${item.widthMm}×${item.heightMm}×${item.lengthMm}mm × ${item.qty}本`);
@@ -502,7 +502,7 @@ async function exportList() {
   const text = formatListAsText();
   if (navigator.share) {
     try {
-      await navigator.share({ title: "簡易見積もり", text });
+      await navigator.share({ title: "木材リスト", text });
     } catch (e) {
       if (e.name !== "AbortError") console.warn("共有に失敗:", e.message);
     }
