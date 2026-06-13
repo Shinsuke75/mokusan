@@ -232,7 +232,10 @@ async function runScan() {
     els.note.value = data.note || "";
     calcVolumeAndUnitPrice();
     els.confirmSection.classList.remove("hidden");
-    setTimeout(() => els.confirmSection.scrollIntoView({ behavior: "smooth" }), 50);
+    setTimeout(() => {
+      const top = els.confirmSection.getBoundingClientRect().top + window.scrollY - 16;
+      window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+    }, 100);
     els.scanStatus.textContent = "抽出結果を確認して追加してください。";
   } catch (e) {
     els.scanStatus.textContent = `エラー: ${e.message}`;
