@@ -42,6 +42,7 @@ const state = {
   selectedFile: null,
   priceData: { recent: [] },
   priceDataLoaded: false,
+  undoList: null,
   list: (() => {
     const saved = localStorage.getItem("mokusan_list");
     if (saved !== null) return JSON.parse(saved);
@@ -108,7 +109,10 @@ const els = {
   totalPrice: getElement("totalPrice"),
   shareButton: getElement("shareButton"),
   resetListButton: getElement("resetListButton"),
-  clearListButton: getElement("clearListButton")
+  clearListButton: getElement("clearListButton"),
+  undoToast: getElement("undoToast"),
+  undoMessage: getElement("undoMessage"),
+  undoButton: getElement("undoButton")
 };
 
 function fillPrefectures() {
@@ -456,27 +460,56 @@ function updateListQty(id, delta) {
   renderList();
 }
 
+let undoTimer = null;
+
+function showUndoToast(message, savedList) {
+  state.undoList = savedList;
+  els.undoMessage.textContent = message;
+  els.undoToast.classList.remove("hidden");
+  if (undoTimer) clearTimeout(undoTimer);
+  undoTimer = setTimeout(hideUndoToast, 5000);
+}
+
+function hideUndoToast() {
+  els.undoToast.classList.add("hidden");
+  state.undoList = null;
+  undoTimer = null;
+}
+
+function undoLastAction() {
+  if (!state.undoList) return;
+  state.list = state.undoList;
+  localStorage.setItem("mokusan_list", JSON.stringify(state.list));
+  hideUndoToast();
+  renderList();
+  renderListChips();
+}
+
 function removeFromList(id) {
+  const saved = JSON.parse(JSON.stringify(state.list));
   state.list = state.list.filter((item) => String(item.id) !== String(id));
   localStorage.setItem("mokusan_list", JSON.stringify(state.list));
   renderList();
   renderListChips();
+  showUndoToast("削除しました", saved);
 }
 
 function resetToDefaults() {
-  if (!confirm("リストを初期値に戻しますか？\n追加した項目はすべて削除されます。")) return;
+  const saved = JSON.parse(JSON.stringify(state.list));
   state.list = makeDefaultEntries();
   localStorage.setItem("mokusan_list", JSON.stringify(state.list));
   renderList();
   renderListChips();
+  showUndoToast("初期値に戻しました", saved);
 }
 
 function clearList() {
-  if (!confirm("リストをすべて削除しますか？")) return;
+  const saved = JSON.parse(JSON.stringify(state.list));
   state.list = [];
   localStorage.setItem("mokusan_list", JSON.stringify(state.list));
   renderList();
   renderListChips();
+  showUndoToast("リストを削除しました", saved);
 }
 
 
@@ -594,6 +627,7 @@ els.addToListButton.addEventListener("click", addToList);
 els.shareButton.addEventListener("click", exportList);
 els.resetListButton.addEventListener("click", resetToDefaults);
 els.clearListButton.addEventListener("click", clearList);
+els.undoButton.addEventListener("click", undoLastAction);
 
 [els.calcUnitPrice, els.calcWidth, els.calcHeight, els.calcLength, els.calcQty]
   .forEach((input) => input.addEventListener("input", updateCalcResult));

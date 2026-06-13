@@ -405,3 +405,47 @@ select {
 }
 .qty-btn:hover { background: var(--green-tint-2); }
 .qty-btn:active { transform: translateY(1px); }
+
+/* --- Undo toast ----------------------------------------------------- */
+.undo-toast {
+  position: fixed;
+  bottom: 20px;
+  left: 16px;
+  right: 16px;
+  max-width: 480px;
+  margin: 0 auto;
+  background: var(--ink);
+  color: #fff;
+  border-radius: 10px;
+  padding: 13px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 14px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.28);
+  z-index: 100;
+  animation: toastIn 0.2s ease;
+}
+@keyframes toastIn {
+  from { transform: translateY(12px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.undo-btn {
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 6px;
+  background: transparent;
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 5px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 32px;
+  width: auto;
+  margin-top: 0;
+  display: inline-block;
+  flex-shrink: 0;
+  letter-spacing: 0.01em;
+}
+.undo-btn:hover { background: rgba(255, 255, 255, 0.12); }
