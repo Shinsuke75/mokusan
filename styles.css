@@ -355,8 +355,9 @@ select {
 }
 .tax-chk input[type="checkbox"]:checked { background: var(--green-600); border-color: var(--green-600); }
 .tax-chk input[type="checkbox"]:checked::after {
-  content: ""; position: absolute; left: 3px; top: 0px; width: 10px; height: 6px;
-  border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(-45deg);
+  content: ""; position: absolute; left: 50%; top: 50%; width: 10px; height: 6px;
+  border-left: 2px solid #fff; border-bottom: 2px solid #fff;
+  transform: translate(-50%, -65%) rotate(-45deg);
 }
 
 /* --- Consent ------------------------------------------------------- */
@@ -370,8 +371,9 @@ select {
 }
 .consent-label input[type="checkbox"]:checked { background: var(--green-600); border-color: var(--green-600); }
 .consent-label input[type="checkbox"]:checked::after {
-  content: ""; position: absolute; left: 3px; top: 0px; width: 10px; height: 6px;
-  border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(-45deg);
+  content: ""; position: absolute; left: 50%; top: 50%; width: 10px; height: 6px;
+  border-left: 2px solid #fff; border-bottom: 2px solid #fff;
+  transform: translate(-50%, -65%) rotate(-45deg);
 }
 .consent-label a { color: var(--green-700); text-decoration: underline; }
 
