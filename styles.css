@@ -345,14 +345,14 @@ select {
 /* --- Price row + tax checkbox -------------------------------------- */
 .price-row { display: flex; gap: 8px; align-items: center; }
 .price-row input[type="number"] { flex: 1; min-width: 0; }
-.tax-toggle { display: flex; border: 2px solid var(--green-600); border-radius: 6px; overflow: hidden; flex-shrink: 0; }
+.tax-toggle { display: flex; background: var(--line); border-radius: 8px; padding: 2px; gap: 2px; flex-shrink: 0; }
 .tax-btn {
-  padding: 5px 12px; font-size: 13px; font-weight: 500; line-height: 1.4;
-  background: transparent; color: var(--green-600);
-  border: none; cursor: pointer; width: auto; min-height: auto; margin: 0;
-  transition: background 0.15s, color 0.15s;
+  padding: 5px 14px; font-size: 13px; font-weight: 500; line-height: 1.4;
+  background: transparent; color: var(--ink-soft);
+  border: none; border-radius: 6px; cursor: pointer; width: auto; min-height: auto; margin: 0;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
 }
-.tax-btn.active { background: var(--green-600); color: #fff; }
+.tax-btn.active { background: #fff; color: var(--green-700); font-weight: 700; box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
 
 /* --- Consent ------------------------------------------------------- */
 .consent-label { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; font-weight: 400; color: var(--ink-soft); margin-top: 14px; cursor: pointer; line-height: 1.55; }
