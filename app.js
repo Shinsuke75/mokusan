@@ -93,13 +93,13 @@ const els = {
   calcSpecies: getElement("calcSpecies"),
   myPriceChips: getElement("myPriceChips"),
   calcUnitPrice: getElement("calcUnitPrice"),
+  calcPriceInput: getElement("calcPriceInput"),
   unitPriceSource: getElement("unitPriceSource"),
   calcWidth: getElement("calcWidth"),
   calcHeight: getElement("calcHeight"),
   calcLength: getElement("calcLength"),
   calcQty: getElement("calcQty"),
   calcVolume: getElement("calcVolume"),
-  calcPrice: getElement("calcPrice"),
   addToListButton: getElement("addToListButton"),
   recentStatus: getElement("recentStatus"),
   recentTable: getElement("recentTable"),
@@ -391,16 +391,29 @@ function onSpeciesChange() {
   }
 }
 
-function updateCalcResult() {
-  const unitPrice = toNumber(els.calcUnitPrice.value);
+let lastEditedCalcField = "unitPrice";
+
+function updateCalcResult(source) {
+  if (source) lastEditedCalcField = source;
   const width = toNumber(els.calcWidth.value);
   const height = toNumber(els.calcHeight.value);
   const length = toNumber(els.calcLength.value);
   const qty = Math.max(1, toNumber(els.calcQty.value, 1));
   const volumeM3 = (width * height * length * qty) / MM3_TO_M3_DIVISOR;
-  const totalPrice = volumeM3 > 0 && unitPrice > 0 ? Math.round(volumeM3 * unitPrice) : 0;
   els.calcVolume.textContent = volumeM3 > 0 ? volumeM3.toFixed(6) : "-";
-  els.calcPrice.textContent = totalPrice > 0 ? totalPrice.toLocaleString("ja-JP") : "-";
+  if (lastEditedCalcField === "price") {
+    const totalPrice = toNumber(els.calcPriceInput.value);
+    if (volumeM3 > 0 && totalPrice > 0) {
+      els.calcUnitPrice.value = Math.round(totalPrice / volumeM3);
+    }
+  } else {
+    const unitPrice = toNumber(els.calcUnitPrice.value);
+    if (volumeM3 > 0 && unitPrice > 0) {
+      els.calcPriceInput.value = Math.round(volumeM3 * unitPrice);
+    } else {
+      els.calcPriceInput.value = "";
+    }
+  }
 }
 
 function renderRecentTable() {
@@ -639,8 +652,10 @@ els.resetListButton.addEventListener("click", resetToDefaults);
 els.clearListButton.addEventListener("click", clearList);
 els.undoButton.addEventListener("click", undoLastAction);
 
-[els.calcUnitPrice, els.calcWidth, els.calcHeight, els.calcLength, els.calcQty]
-  .forEach((input) => input.addEventListener("input", updateCalcResult));
+els.calcUnitPrice.addEventListener("input", () => updateCalcResult("unitPrice"));
+els.calcPriceInput.addEventListener("input", () => updateCalcResult("price"));
+[els.calcWidth, els.calcHeight, els.calcLength, els.calcQty]
+  .forEach((input) => input.addEventListener("input", () => updateCalcResult()));
 
 fillPrefectures();
 renderListChips();
