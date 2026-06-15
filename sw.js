@@ -1,4 +1,4 @@
-const CACHE = "mokusan-v14";
+const CACHE = "mokusan-v15";
 const ASSETS = ["/app.js", "/styles.css", "/manifest.json", "/icon.svg"];
 
 self.addEventListener("install", (e) => {

@@ -371,8 +371,9 @@ select {
 .consent-label a { color: var(--green-700); text-decoration: underline; }
 
 /* --- Footer -------------------------------------------------------- */
-.app-footer { text-align: center; padding: 24px 0 16px; font-size: 12px; }
+.app-footer { display: flex; justify-content: center; align-items: center; gap: 12px; padding: 24px 0 16px; font-size: 12px; }
 .app-footer a { color: var(--ink-faint); text-decoration: underline; }
+.app-version { color: var(--ink-faint); }
 
 /* --- List cards ----------------------------------------------------- */
 .list-cards { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
