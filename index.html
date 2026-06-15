@@ -109,19 +109,15 @@
               <input id="calcSpecies" placeholder="例: スギ（製材品）" />
               <div id="myPriceChips" class="chips"></div>
             </div>
-            <label class="full">
-              立米単価 (円/m³)
-              <input id="calcUnitPrice" type="number" min="0" placeholder="単価を入力" />
-              <span id="unitPriceSource" class="hint-text"></span>
-            </label>
             <label>幅(mm)<input id="calcWidth" type="number" min="0" /></label>
             <label>厚み(mm)<input id="calcHeight" type="number" min="0" /></label>
             <label>長さ(mm)<input id="calcLength" type="number" min="0" /></label>
             <label>本数・枚数<input id="calcQty" type="number" min="1" value="1" /></label>
+            <label>立米単価 (円/m³)<input id="calcUnitPrice" type="number" min="0" placeholder="単価を入力" /><span id="unitPriceSource" class="hint-text"></span></label>
+            <label>金額 (円)<input id="calcPriceInput" type="number" min="0" placeholder="金額を入力" /></label>
           </div>
           <div class="resultBox">
             <p>体積: <span id="calcVolume">-</span> m³</p>
-            <p>金額: <strong><span id="calcPrice">-</span> 円</strong></p>
           </div>
           <button id="addToListButton" type="button" class="secondary">＋ リストに追加</button>
         </section>
