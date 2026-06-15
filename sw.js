@@ -1,5 +1,5 @@
-const CACHE = "mokusan-v15";
-const ASSETS = ["/app.js", "/styles.css", "/manifest.json", "/icon.svg"];
+const CACHE = "mokusan-v16";
+const ASSETS = ["/app.js", "/styles.css", "/manifest.json", "/icon.svg", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)));
