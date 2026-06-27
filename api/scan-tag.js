@@ -53,7 +53,7 @@ export default async function handler(req, res) {
   if (!isAllowedOrigin(req)) {
     return res.status(403).json({ error: "Forbidden" });
   }
-  if (checkRateLimit(getClientIp(req), 10)) {
+  if (await checkRateLimit(getClientIp(req), 10)) {
     return res.status(429).json({ error: "リクエストが多すぎます。しばらくしてからお試しください。" });
   }
 
