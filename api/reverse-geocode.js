@@ -24,7 +24,7 @@ export default async function handler(req, res) {
   if (!isAllowedOrigin(req)) {
     return res.status(403).json({ error: "Forbidden" });
   }
-  if (checkRateLimit(getClientIp(req), 30)) {
+  if (await checkRateLimit(getClientIp(req), 30)) {
     return res.status(429).json({ error: "Too Many Requests" });
   }
 
